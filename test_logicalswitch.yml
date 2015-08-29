@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_US_nsxman.yml
+  tasks:
+  - name: logicalSwitch Operation
+    logicalSwitch:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      transportzone: "TZ"
+      name: "TestLS"
+      controlplanemode: "UNICAST_MODE"
+      description: "My Great Logical Switch"
+    register: create_logical_switch
+
+  #- debug: var=create_logical_switch

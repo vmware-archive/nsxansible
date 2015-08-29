@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: NSX Manager VC Registration
+    nsxVcRegistration:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      vcenter: 'testvc.emea.nicira'
+      vcusername: 'administrator@vsphere.local'
+      vcpassword: 'vmware'
+      vccertthumbprint: 'D8:E1:1F:C1:AD:F7:BA:08:34:0B:20:63:CE:2B:42:C3:CC:90:20:AE'
+    register: register_to_vc
+
+#  - debug: var=register_to_vc

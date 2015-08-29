@@ -1,0 +1,21 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Controller IP Pool creation
+    nsxIpPool:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansible_controller_ip_pool'
+      start_ip: '172.17.100.65'
+      end_ip: '172.17.100.67'
+      prefix_length: '24'
+      gateway: '172.17.100.1'
+      dns_server_1: '172.17.100.11'
+      dns_server_2: '172.17.100.12'
+    register: create_ip_pool
+
+  #- debug: var=create_ip_pool
