@@ -6,13 +6,13 @@ to create, read, update and delete objects in NSX for vSphere.
 ## Requirements
 
 This module requires the NSX for vSphere RAML file (RAML based documentation).
-The latest version of the NSX for vSphere RAML file can be found and downloaded here: http://github.com/yfauser/nsxraml.
+The latest version of the NSX for vSphere RAML file can be found and downloaded here: http://github.com/vmware/nsxraml.
 
 The Python based ``nsxramlclient`` must also be installed. Example of installing using pip:
 ```sh
 sudo pip install nsxramlclient
 ```
-More details on this Python client for the NSX for vSphere API can be found here: http://github.com/yfauser/nsxramlclient. Additional details on installation is also available.
+More details on this Python client for the NSX for vSphere API can be found here: http://github.com/vmware/nsxramlclient. Additional details on installation is also available.
 
 ## How to use these modules
 
