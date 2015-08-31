@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+   - answerfile.yml
+  tasks:
+  - name: "TEST ~ Create a new MACset (EXPECT changed=true)"
+    macSet:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      transportzone: "globalroot-0"
+      description: "My MACset"
+      name: "TestMS"
+      value: "00:11:44:11:44:00"
+    register: create_macset
+  - name: Check MACset create response 
+    debug: var=create_macset
+
+  - name: "TEST ~ Update the MACset (EXPECT changed=true)"
+    macSet:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      transportzone: "globalroot-0"
+      description: "My MACset is way cooler now"
+      name: "TestMS"
+      value: "11:11:11:11:11:11"
+    register: update_macset
+  - name: Check MACset update response
+    debug: var=update_macset
+
+  - name: "TEST ~ Update the MACset (EXPECT changed=false)"
+    macSet:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      transportzone: "globalroot-0"
+      description: "My MACset is way cooler now"
+      name: "TestMS"
+      value: "11:11:11:11:11:11"
+    register: update_macset_again
+  - name: Check MACset update response
+    debug: var=update_macset_again
+
+  - name: "TEST ~ Delete the MACset (EXPECT changed=true)"
+    macSet:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      transportzone: "globalroot-0"
+      name: "TestMS"
+      state: absent
+    register: delete_macset
+  - name: Check MACset delete response
+    debug: var=delete_macset
