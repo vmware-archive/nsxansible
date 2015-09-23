@@ -1,0 +1,22 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Controller Cluster Creation
+    nsxControllers:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      deploytype: 'full'
+      syslog_server: '172.17.100.129'
+      ippool_id: 'ipaddresspool-2'
+      resourcepool_moid: 'domain-c26'
+      #host_moid: 'host-29'
+      datastore_moid: 'datastore-37'
+      network_moid: 'dvportgroup-36'
+      password: 'VMware1!VMware1!'
+    register: create_controller_cluster
+
+  #- debug: var=create_controller_cluster

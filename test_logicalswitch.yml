@@ -3,7 +3,7 @@
   connection: local
   gather_facts: False
   vars_files:
-     - answerfile_US_nsxman.yml
+     - answerfile_old_nsxman.yml
   tasks:
   - name: logicalSwitch Operation
     logicalSwitch:
@@ -11,7 +11,7 @@
       state: absent
       transportzone: "TZ"
       name: "TestLS"
-      controlplanemode: "UNICAST_MODE"
+      controlplanemode: "HYBRID_MODE"
       description: "My Great Logical Switch"
     register: create_logical_switch
 
