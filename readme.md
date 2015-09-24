@@ -225,7 +225,7 @@ Example:
 ```
 
 ### Module `nsxControllers`
-##### Deploy individual controllers, full 3 node clusters as well as 1 node lab deyployments including syslog configuration
+##### Deploy individual controllers, full 3 node clusters as well as 1 node lab deployments including syslog configuration
 
 - state:
 present or absent, defaults to present
@@ -241,7 +241,7 @@ Optional: This will set the syslog server on **all** controller nodes found in t
 - ippool_id:
 Mandatory: The IP Pool used to assign IP Addresses to controller nodes
 - resourcepool_moid:
-Mandatory: The vSphere Managed Object Id of the vSphere cluster or ressource pool to deploy the controller into
+Mandatory: The vSphere Managed Object Id of the vSphere cluster or resource pool to deploy the controller into
 - host_moid:
 Optional: The vSphere Managed Object Id of an individual host where to place the controller in
 - datastore_moid:
@@ -276,6 +276,45 @@ Example:
     register: create_controller_cluster
 
   #- debug: var=create_controller_cluster
+```
+
+### Module `nsxSegmentIdPool`
+##### Configure or delete the VXLAN Segment Id Pool (VXLAN Id space) and optionally associated Multicast Range
+
+- state:
+present or absent, defaults to present
+- idpoolstart:
+Id Pool start Id. Defaults to 5000 if not supplied
+- idpoolend:
+Id Pool end Id. Defaults to 15000 if not supplied
+- mcast_enabled:
+If set to true, a multicast range will be configured alongside the Segment Id. Defaults to false if not set. 
+Setting mcast_enabled to false for an existing segment pool will remove the multicast pool but keep the segment pool
+- mcastpoolstart:
+Starting Multicast IP Address. Defaults to '239.0.0.0' if not set explicitly. Only used if 'mcast_enabled' is 'true'
+- mcastpoolend:
+Ending Multicast IP Address. Defaults to '239.255.255.255' if not set explicitly. Only used if 'mcast_enabled' is 'true'
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Segment Pool Configuration
+    nsxSegmentIdPool:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      #idpoolstart: 5000
+      #idpoolend: 15000
+      mcast_enabled: true
+      #mcastpoolstart: '239.0.0.0'
+      #mcastpoolend: '239.255.255.255' 
+    register: create_segment_pool
+
+  #- debug: var=create_segment_pool
 ```
 
 ## License
