@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Segment Pool Configuration
+    nsxSegmentIdPool:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      #idpoolstart: 5000
+      #idpoolend: 15000
+      mcast_enabled: true
+      #mcastpoolstart: '239.0.0.0'
+      #mcastpoolend: '239.255.255.255' 
+    register: create_segment_pool
+
+  #- debug: var=create_segment_pool

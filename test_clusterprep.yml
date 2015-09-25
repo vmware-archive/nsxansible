@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Cluster preparation
+    nsxClusterPrep:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      cluster_moid: 'domain-c26'
+    register: cluster_prep
+
+  - debug: var=cluster_prep

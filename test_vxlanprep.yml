@@ -1,0 +1,21 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Cluster VXLAN Preparation
+    nsxVxlanPrep:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      cluster_moid: 'domain-c26'
+      dvs_moid: 'dvs-34'
+      ippool_id: 'ipaddresspool-3'
+      #vlan_id: 100
+      #vmknic_count: 1
+      #teaming: 'ETHER_CHANNEL'
+      #mtu: 9000
+    register: vxlan_prep
+
+  - debug: var=vxlan_prep

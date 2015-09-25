@@ -317,6 +317,84 @@ Ending Multicast IP Address. Defaults to '239.255.255.255' if not set explicitly
   #- debug: var=create_segment_pool
 ```
 
+### Module `nsxClusterPrep`
+##### Prepares the vSphere Clusters for the use with NSX (Installs the VIBs)
+
+- state:
+present or absent, defaults to present. 
+Present will start the cluster prep (install VIBs) if the cluster is in the 'UNKNOWN' state. 
+If the cluster is in 'RED' or 'YELLOW' state, the module will fail and ask for manual intervention.
+Absent will un-prep the cluster (uninstall the VIBs). This will leave the cluster in the 'RED'
+state, requiring the vSphere Admin to reboot the hypervisors to complete the VIB uninstall
+- cluster_moid:
+Mandatory: The vSphere managed object Id of the cluster to prep or un-prep
+
+```yml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Cluster preparation
+    nsxClusterPrep:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      cluster_moid: 'domain-c26'
+    register: cluster_prep
+
+  #- debug: var=cluster_prep
+```
+
+### Module `nsxVxlanPrep`
+##### Prepares the vSphere Cluster and VDS for VXLAN (Configures VTEP Interfaces)
+
+- state:
+present or absent, defaults to present. 
+Present will configure VXLAN according to the passed details or defaults, 
+Absent will un-configure VXLAN (remove the VTEPs).
+- cluster_moid:
+Mandatory: The vSphere managed object Id of the cluster to configure VXLAN VTEPs on
+- dvs_moid:
+Mandatory: The vSphere managed object Id of the distributed vSwitch (dvs) used as the transport
+network dvs
+- ippool_id:
+Optional: If not passed the VTEPs will be set to receive its IP Address via DHCP. If set to
+an valid nsx ippool id, the VTEP IP will be allocated from the IP Pool
+- vlan_id:
+Optional: Defaults to 0 (untagged), if set to a value this specifies the VLAN Id for the VTEP
+- vmknic_count:
+Optional: Defaults to 1, number of VTEP Interfaces to deploy. This is only working for the teaming modes 'LOADBALANCE_SRCID' and 'LOADBALANCE_SRCMAC' and when multiple uplinks are present
+- teaming:
+Optional: Defaults to 'FAILOVER_ORDER'. This specifies the uplink teaming mode for the VTEP port-group. Valid values are: FAILOVER_ORDER,ETHER_CHANNEL,LACP_ACTIVE,LACP_PASSIVE,LOADBALANCE_SRCID,LOADBALANCE_SRCMAC & LACP_V2
+- mtu:
+Optional: Defaults to 1600, the MTU configured for the VTEP and VTEP port-group
+
+```yml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Cluster VXLAN Preparation
+    nsxVxlanPrep:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      cluster_moid: 'domain-c26'
+      dvs_moid: 'dvs-34'
+      ippool_id: 'ipaddresspool-3'
+      #vlan_id: 100
+      #vmknic_count: 1
+      #teaming: 'ETHER_CHANNEL'
+      #mtu: 9000
+    register: vxlan_prep
+
+  #- debug: var=vxlan_prep
+```
+
 ## License
 
 Copyright © 2015 VMware, Inc. All Rights Reserved.
