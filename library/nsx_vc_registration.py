@@ -17,6 +17,7 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+
 def retrieve_vc_config(session):
     vc_reg_resp = session.read('vCenterConfig')
     return vc_reg_resp['body']
@@ -33,24 +34,34 @@ def main():
             vcenter=dict(required=True),
             vcusername=dict(required=True),
             vcpassword=dict(required=True),
-            vccertthumbprint=dict(required=True)
+            vccertthumbprint=dict(),
+            accept_all_certs=dict(choices=[True, False])
         ),
+        required_one_of = [['accept_all_certs','vccertthumbprint']],
+        mutually_exclusive = [['accept_all_certs','vccertthumbprint']],
         supports_check_mode=False
     )
 
     from nsxramlclient.client import NsxClient
+    import OpenSSL, ssl
 
     s = NsxClient(module.params['nsxmanager_spec']['raml_file'], module.params['nsxmanager_spec']['host'],
                   module.params['nsxmanager_spec']['user'], module.params['nsxmanager_spec']['password'])
 
     vc_config = retrieve_vc_config(s)
 
+    api_cert = ssl.get_server_certificate((module.params['vcenter'], 9443))
+    x509_api = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, api_cert)
+    api_cert_thumbp = x509_api.digest('sha1')
+
+    if module.params['accept_all_certs']:
+        module.params['vccertthumbprint'] = api_cert_thumbp
+
     if 'ipAddress' not in vc_config['vcInfo'].keys():
         change_required = True
         vc_config['vcInfo']['userName'] = module.params['vcusername']
         vc_config['vcInfo']['ipAddress'] = module.params['vcenter']
         vc_config['vcInfo']['certificateThumbprint'] = module.params['vccertthumbprint']
-        vc_config['vcInfo']['assignRoleToUser'] = 'enterprise_admin'
     else:
        change_required = False
 
@@ -66,8 +77,10 @@ def main():
             vc_config['vcInfo']['certificateThumbprint'] = module.params['vccertthumbprint']
             change_required = True
     if change_required:
-        vc_config['vcInfo']['assignRoleToUser'] = 'enterprise_admin'
+        vc_config['vcInfo']['assignRoleToUser'] = 'true'
         vc_config['vcInfo']['password'] = module.params['vcpassword']
+        if 'vcInventoryLastUpdateTime' in vc_config['vcInfo']:
+            vc_config['vcInfo'].pop('vcInventoryLastUpdateTime')
         sso_config_response = change_vc_config(s, vc_config)
         module.exit_json(changed=True, argument_spec=module.params, sso_config_response=sso_config_response)
     else:

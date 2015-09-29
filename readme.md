@@ -109,15 +109,18 @@ Example:
 ##### Registers NSX Manager to VC or changes the registration
 
 - vcenter: 
-Hostname or IP address of the vCenter server to which NSX Manager should be registered/
+Mandatory: Hostname or IP address of the vCenter server to which NSX Manager should be registered/
 - vcusername:
-Username on the vCenter that should be used to register NSX Manager.
+Mandatory: Username on the vCenter that should be used to register NSX Manager.
 - vcpassword:
-Password of the vCenter user used to register NSX Manager.
+Mandatory: Password of the vCenter user used to register NSX Manager.
 - vccertthumbprint: 
-Certificate thumbprint of vCenter service.
+Mandatory if 'accept_all_certs' is not 'True': Certificate thumbprint of vCenter service.
+- accept_all_certs:
+Mandatory if 'vccertthumbprint' is not supplied: If set to 'True', NSX Manager will be connected to any vCenter Server
+without checking the certificate thumbprint
 
-All above values are mandatory.
+*Note: 'accept_all_certs' and 'vccertthumbprint' are mutualy exclusive*
 
 Example:
 ```yaml
@@ -126,18 +129,19 @@ Example:
   connection: local
   gather_facts: False
   vars_files:
-     - answerfile.yml
+     - answerfile_new_nsxman.yml
   tasks:
   - name: NSX Manager VC Registration
     nsx_vc_registration:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
-      vcenter: 'testvc'
-      vcusername: 'root'
+      vcenter: 'testvc.emea.nicira'
+      vcusername: 'administrator@vsphere.local'
       vcpassword: 'vmware'
-      vccertthumbprint: 'D8:E1:1F:C1:AD:F7:BA:08:34:0B:20:63:CE:2B:42:C3:CC:90:20:AE'
+      #vccertthumbprint: '04:9D:9B:64:97:73:89:AF:16:4F:60:A0:F8:59:3A:D3:B8:C4:4B:A2'
+      accept_all_certs: true
     register: register_to_vc
 
-  #  - debug: var=register_to_vc
+#  - debug: var=register_to_vc
 ```
 
 ### Module `nsx_sso_registration`
@@ -146,15 +150,21 @@ Example:
 - state:
 present or absent, defaults to present
 - sso_lookupservice_url:
-SSO Lookup Service url. Example format: https://ip_or_hostname:7444/lookupservice/sdk
+Mandatory: SSO Lookup Service url. Example format: 'lookupservice/sdk'
+- sso_lookupservice_port:
+Mandatory: SSO Lookup Service port. E.g. '7444'
+- sso_lookupservice_server: 
+Mandatory: SSO Server Hostname, FQDN or IP Address. E.g. 'testvc.emea.nicira'
 - sso_admin_username: 
-Username to register to SSO. Typically thi sis administrator@vsphere.local
+Mandatory: Username to register to SSO. Typically thi sis administrator@vsphere.local
 - sso_admin_password:
-Password of the SSO user used to register.
+Mandatory: Password of the SSO user used to register.
 - sso_certthumbprint: 
-Certificate thumbprint of SSO service.
+Mandatory if 'accept_all_certs' is not 'True': Certificate thumbprint of SSO service.
+- accept_all_certs:
+Mandatory if 'sso_certthumbprint' is not supplied: If set to 'True', NSX Manager will be connected to any SSO Server without checking the certificate thumbprint
 
-All above values are mandatory
+*Note: 'accept_all_certs' and 'vccertthumbprint' are mutualy exclusive*
 
 Example:
 ```yaml
@@ -163,16 +173,19 @@ Example:
   connection: local
   gather_facts: False
   vars_files:
-     - answerfile.yml
+     - answerfile_new_nsxman.yml
   tasks:
   - name: NSX Manager SSO Registration
     nsx_sso_registration:
       state: present
       nsxmanager_spec: "{{ nsxmanager_spec }}"
-      sso_lookupservice_url: 'https://172.17.100.60:7444/lookupservice/sdk'
+      sso_lookupservice_url: 'lookupservice/sdk'
+      sso_lookupservice_port: 7444
+      sso_lookupservice_server: 'testvc.emea.nicira'
       sso_admin_username: 'administrator@vsphere.local'
       sso_admin_password: 'vmware'
-      sso_certthumbprint: '33:80:F0:58:DB:D4:59:A2:46:14:83:14:2C:48:C3:29:70:25:BE:31'
+      #sso_certthumbprint: 'DE:D7:57:DC:D3:E4:40:4E:AA:4A:3A:56:91:B0:48:92:6E:68:E6:03'
+      accept_all_certs: true
     register: register_to_sso
 
 #  - debug: var=register_to_sso

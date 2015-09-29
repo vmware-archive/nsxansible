@@ -11,7 +11,8 @@
       vcenter: 'testvc.emea.nicira'
       vcusername: 'administrator@vsphere.local'
       vcpassword: 'vmware'
-      vccertthumbprint: 'D8:E1:1F:C1:AD:F7:BA:08:34:0B:20:63:CE:2B:42:C3:CC:90:20:AE'
+      #vccertthumbprint: '04:9D:9B:64:97:73:89:AF:16:4F:60:A0:F8:59:3A:D3:B8:C4:4B:A2'
+      accept_all_certs: true
     register: register_to_vc
 
 #  - debug: var=register_to_vc

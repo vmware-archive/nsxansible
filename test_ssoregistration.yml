@@ -9,10 +9,13 @@
     nsx_sso_registration:
       state: present
       nsxmanager_spec: "{{ nsxmanager_spec }}"
-      sso_lookupservice_url: 'https://172.17.100.60:7444/lookupservice/sdk'
+      sso_lookupservice_url: 'lookupservice/sdk'
+      sso_lookupservice_port: 7444
+      sso_lookupservice_server: 'testvc.emea.nicira'
       sso_admin_username: 'administrator@vsphere.local'
       sso_admin_password: 'vmware'
-      sso_certthumbprint: '33:80:F0:58:DB:D4:59:A2:46:14:83:14:2C:48:C3:29:70:25:BE:31'
+      #sso_certthumbprint: 'DE:D7:57:DC:D3:E4:40:4E:AA:4A:3A:56:91:B0:48:92:6E:68:E6:03'
+      accept_all_certs: true
     register: register_to_sso
 
 #  - debug: var=register_to_sso
