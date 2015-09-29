@@ -6,7 +6,7 @@
      - answerfile_new_nsxman.yml
   tasks:
   - name: Controller Cluster Creation
-    nsxControllers:
+    nsx_controllers:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       deploytype: 'full'

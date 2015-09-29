@@ -6,7 +6,7 @@
      - answerfile_new_nsxman.yml
   tasks:
   - name: NSX Manager VC Registration
-    nsxVcRegistration:
+    nsx_vc_registration:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       vcenter: 'testvc.emea.nicira'
       vcusername: 'administrator@vsphere.local'

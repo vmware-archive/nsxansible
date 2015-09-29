@@ -6,7 +6,7 @@
      - answerfile_new_nsxman.yml
   tasks:
   - name: Segment Pool Configuration
-    nsxSegmentIdPool:
+    nsx_sgement_id_pool:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       #idpoolstart: 5000

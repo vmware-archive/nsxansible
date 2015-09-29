@@ -6,7 +6,7 @@
      - answerfile_new_nsxman.yml
   tasks:
   - name: Controller IP Pool creation
-    nsxIpPool:
+    nsx_ippool:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       name: 'ansible_controller_ip_pool'

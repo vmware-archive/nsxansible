@@ -51,7 +51,7 @@ nsxmanager_spec:
      - answerfile.yml
   tasks:
   - name: logicalSwitch Operation
-    logicalSwitch:
+    nsx_logical_switch:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       transportzone: "TZ"
@@ -68,7 +68,7 @@ The example shows thes ```nsxmanager_spec``` is read out of the file ```answerfi
 
 Every module has specific parameters that are explained in the following sections:
 
-###  Module `logicalSwitch`
+###  Module `nsx_logical_switch`
 ##### Create, update and delete logical Switches
 - state: 
 present or absent, defaults to present
@@ -93,7 +93,7 @@ Example:
      - answerfile.yml
   tasks:
   - name: logicalSwitch Operation
-    logicalSwitch:
+    nsx_logical_switch:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: absent
       transportzone: "TZ"
@@ -105,7 +105,7 @@ Example:
   #- debug: var=create_logical_switch
 ```
 
-###  Module `nsxVcRegistration`
+###  Module `nsx_vc_registration`
 ##### Registers NSX Manager to VC or changes the registration
 
 - vcenter: 
@@ -129,7 +129,7 @@ Example:
      - answerfile.yml
   tasks:
   - name: NSX Manager VC Registration
-    nsxVcRegistration:
+    nsx_vc_registration:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       vcenter: 'testvc'
       vcusername: 'root'
@@ -140,7 +140,7 @@ Example:
   #  - debug: var=register_to_vc
 ```
 
-### Module `nsxSsoRegistration`
+### Module `nsx_sso_registration`
 ##### Registers NSX Manager to SSO or changes and deletes the SSO Registration
 
 - state:
@@ -166,7 +166,7 @@ Example:
      - answerfile.yml
   tasks:
   - name: NSX Manager SSO Registration
-    nsxSsoRegistration:
+    nsx_sso_registration:
       state: present
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       sso_lookupservice_url: 'https://172.17.100.60:7444/lookupservice/sdk'
@@ -178,7 +178,7 @@ Example:
 #  - debug: var=register_to_sso
 ```
 
-### Module `nsxIpPool`
+### Module `nsx_ippool`
 ##### Create, update and delete an IP Pool in NSX Manager
 
 - state:
@@ -209,7 +209,7 @@ Example:
      - answerfile.yml
   tasks:
   - name: Controller IP Pool creation
-    nsxIpPool:
+    nsx_ippool:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       name: 'ansible_controller_ip_pool'
@@ -224,7 +224,7 @@ Example:
   #- debug: var=create_ip_pool
 ```
 
-### Module `nsxControllers`
+### Module `nsx_controllers`
 ##### Deploy individual controllers, full 3 node clusters as well as 1 node lab deployments including syslog configuration
 
 - state:
@@ -262,7 +262,7 @@ Example:
      - answerfile_new_nsxman.yml
   tasks:
   - name: Controller Cluster Creation
-    nsxControllers:
+    nsx_controllers:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       deploytype: 'lab'
@@ -278,7 +278,7 @@ Example:
   #- debug: var=create_controller_cluster
 ```
 
-### Module `nsxSegmentIdPool`
+### Module `nsx_segment_id_pool`
 ##### Configure or delete the VXLAN Segment Id Pool (VXLAN Id space) and optionally associated Multicast Range
 
 - state:
@@ -304,7 +304,7 @@ Ending Multicast IP Address. Defaults to '239.255.255.255' if not set explicitly
      - answerfile_new_nsxman.yml
   tasks:
   - name: Segment Pool Configuration
-    nsxSegmentIdPool:
+    nsx_segment_id_pool:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       #idpoolstart: 5000
@@ -317,7 +317,7 @@ Ending Multicast IP Address. Defaults to '239.255.255.255' if not set explicitly
   #- debug: var=create_segment_pool
 ```
 
-### Module `nsxClusterPrep`
+### Module `nsx_cluster_prep`
 ##### Prepares the vSphere Clusters for the use with NSX (Installs the VIBs)
 
 - state:
@@ -338,7 +338,7 @@ Mandatory: The vSphere managed object Id of the cluster to prep or un-prep
      - answerfile_new_nsxman.yml
   tasks:
   - name: Cluster preparation
-    nsxClusterPrep:
+    nsx_cluster_prep:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       cluster_moid: 'domain-c26'
@@ -347,7 +347,7 @@ Mandatory: The vSphere managed object Id of the cluster to prep or un-prep
   #- debug: var=cluster_prep
 ```
 
-### Module `nsxVxlanPrep`
+### Module `nsx_vxlan_prep`
 ##### Prepares the vSphere Cluster and VDS for VXLAN (Configures VTEP Interfaces)
 
 - state:
@@ -380,7 +380,7 @@ Optional: Defaults to 1600, the MTU configured for the VTEP and VTEP port-group
      - answerfile_new_nsxman.yml
   tasks:
   - name: Cluster VXLAN Preparation
-    nsxVxlanPrep:
+    nsx_vxlan_prep:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       cluster_moid: 'domain-c26'

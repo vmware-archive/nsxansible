@@ -6,7 +6,7 @@
      - answerfile_new_nsxman.yml
   tasks:
   - name: NSX Manager SSO Registration
-    nsxSsoRegistration:
+    nsx_sso_registration:
       state: present
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       sso_lookupservice_url: 'https://172.17.100.60:7444/lookupservice/sdk'

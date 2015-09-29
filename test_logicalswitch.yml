@@ -5,8 +5,8 @@
   vars_files:
      - answerfile_old_nsxman.yml
   tasks:
-  - name: logicalSwitch Operation
-    logicalSwitch:
+  - name: nsx_logical_switch Operation
+    nsx_logical_switch:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: absent
       transportzone: "TZ"
