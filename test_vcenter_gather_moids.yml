@@ -1,0 +1,24 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Gather vCenter MOIDs
+    vcenter_gather_moids:
+      hostname: 'testvc.emea.nicira'
+      username: 'administrator@vsphere.local'
+      password: 'vmware'
+      datacenter_name: 'nsxlabdc'
+      cluster_names:
+        - 'compute'
+        - 'management-and-edge'
+      resourcepool_names: 'test_rp'
+      dvs_names: 'TransportVDS'
+      portgroup_names: 'VM Network'
+      datastore_names: 'NFS-Storage03'
+    register: gather_moids_output
+
+  - debug: var=gather_moids_output
+  - debug: msg="The moid of the cluster named 'compute' is {{ gather_moids_output.moids.cluster_names.compute }}"

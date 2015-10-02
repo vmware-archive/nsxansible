@@ -5,14 +5,20 @@ to create, read, update and delete objects in NSX for vSphere.
 
 ## Requirements
 
-This module requires the NSX for vSphere RAML file (RAML based documentation).
-The latest version of the NSX for vSphere RAML file can be found and downloaded here: http://github.com/vmware/nsxraml.
+This module requires the NSX for vSphere RAML spec (RAML based documentation).
+The latest version of the NSX for vSphere RAML spec (raml file + schema files) can be found and downloaded here: http://github.com/vmware/nsxraml.
 
 The Python based ``nsxramlclient`` must also be installed. Example of installing using pip:
 ```sh
 sudo pip install nsxramlclient
 ```
 More details on this Python client for the NSX for vSphere API can be found here: http://github.com/vmware/nsxramlclient. Additional details on installation is also available.
+
+In addition, the 'vcenter_gather_facts' module requires that you have the vCenter python client 'Pyvmomi' installed. Example of installing PyVmomi using pip:
+```sh
+sudo pip install pyvmomi
+```
+More details on this Python client for vCenter can be found here: http://github.com/vmware/pyvmomi. Additional details on installation is also available.
 
 ## How to use these modules
 
@@ -308,6 +314,7 @@ Starting Multicast IP Address. Defaults to '239.0.0.0' if not set explicitly. On
 - mcastpoolend:
 Ending Multicast IP Address. Defaults to '239.255.255.255' if not set explicitly. Only used if 'mcast_enabled' is 'true'
 
+Example:
 ```yaml
 ---
 - hosts: localhost
@@ -342,6 +349,7 @@ state, requiring the vSphere Admin to reboot the hypervisors to complete the VIB
 - cluster_moid:
 Mandatory: The vSphere managed object Id of the cluster to prep or un-prep
 
+Example:
 ```yml
 ---
 - hosts: localhost
@@ -384,6 +392,7 @@ Optional: Defaults to 'FAILOVER_ORDER'. This specifies the uplink teaming mode f
 - mtu:
 Optional: Defaults to 1600, the MTU configured for the VTEP and VTEP port-group
 
+Example:
 ```yml
 ---
 - hosts: localhost
@@ -407,6 +416,83 @@ Optional: Defaults to 1600, the MTU configured for the VTEP and VTEP port-group
 
   #- debug: var=vxlan_prep
 ```
+
+### Module `vcenter_gather_moids`
+##### Retrieves Managed Object Ids (moids) from vCenter to use them in the NSX plays
+
+The NSX Modules often need vCenter moids to be presented to them. To retrieve them dynamically from vCenter when running
+a playbook, you can use the `vcenter_gather_moids` module.
+
+- hostname:
+Mandatory: The Hostname, FQDN or IP Address of your vCenter Server
+- username:
+Mandatory: The Username used to access you vCenter
+- password:
+Mandatory: The password of your vCenter users
+- datacenter_name:
+Mandatory: The name of the datacenter object to search, and to search subsequent objects in
+- cluster_names:
+Optional: A list of names of clusters to gather moids from
+- resourcepool_names:
+Optional: A list of names of resourcepools to gather moids from
+- dvs_names:
+Optional: A list of names of dvs to gather moids from
+- portgroup_names:
+Optional: A list of names of portgroups to gather moids from
+- datastore_names:
+Optional: A list of names of datastores to gather moids from
+
+NOTE: All Optional Paramters are lists:
+- If searching only one items moid, you can pass the name as single string like 
+  
+  ```yml
+  dvs_names: 'TransportVDS'
+  ```
+
+- If searching multiple moids: Pass a list of names either like this:
+
+      ```yml
+      cluster_names:
+        - 'compute'
+        - 'management-and-edge'
+      ```
+
+  or with the python dict syntax   
+
+  ```yml
+  cluster_names: ['compute', 'management-and-edge']
+  ```
+
+Example:
+```yml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Gather vCenter MOIDs
+    vcenter_gather_moids:
+      hostname: 'testvc.emea.nicira'
+      username: 'administrator@vsphere.local'
+      password: 'vmware'
+      datacenter_name: 'nsxlabdc'
+      cluster_names:
+        - 'compute'
+        - 'management-and-edge'
+      resourcepool_names: 'test_rp'
+      dvs_names: 'TransportVDS'
+      portgroup_names: 'VM Network'
+      datastore_names: 'NFS-Storage03'
+    register: gather_moids_output
+
+  - debug: var=gather_moids_output
+  - debug: msg="The moid of the cluster named 'compute' is {{ gather_moids_output.moids.cluster_names.compute }}"
+```
+
+E.g. to access the managed object Id of the cluster named 'compute' in a subsequent play, you can refer to the moid with {{ gather_moids_output.moids.cluster_names.compute }}. 'gather_moids_output' is the name of the output variable you registered with the play using 'vcenter_gather_moids'. 'moids' is the dict object returned by the module as a result. 'cluster_names' is the dictionary resulting of your list of searched clusters in the clusters_name parameter, and 'compute' is one of the items you passed with the 'cluster_names' parameter.
+
 
 ## License
 
