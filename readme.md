@@ -218,6 +218,10 @@ Optional: First DNS server in the pool.
 - dns_server_2:
 Optional: Second DNS server in the pool.
 
+Returns:
+ippool_id variable will contain the IP Pool Id in NSX (e.g. "ipaddresspool-2") if the ippool is created, updates or un-changed.
+None will be returned when the IP Pool state is absent.
+
 Example:
 ```yaml
 ---
@@ -241,6 +245,18 @@ Example:
     register: create_ip_pool
 
   #- debug: var=create_ip_pool
+```
+
+Example return:
+```yaml
+- debug: var=controller_ip_pool.ippool_id
+```
+```sh
+ok: [localhost] => {
+    "var": {
+        "controller_ip_pool.ippool_id": "ipaddresspool-10"
+    }
+}
 ```
 
 ### Module `nsx_controllers`

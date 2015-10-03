@@ -17,6 +17,7 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+
 def get_ippool_id(session, searched_pool_name):
     try:
         ip_pools = session.read('ipPools',
@@ -85,7 +86,8 @@ def main():
         new_ip_pool['ipamAddressPool']['name'] = module.params['name']
 
         create_response = create_ip_pool(s, new_ip_pool)
-        module.exit_json(changed=True, argument_spec=module.params, create_response=create_response)
+        module.exit_json(changed=True, argument_spec=module.params, create_response=create_response,
+                         ippool_id=create_response['objectId'])
 
     elif module.params['state'] == 'absent':
         if ip_pool_objectid:
@@ -129,9 +131,11 @@ def main():
         revision += 1
         ippool_config['ipamAddressPool']['revision'] = str(revision)
         updateippool_response = update_ippool(s, ip_pool_objectid, ippool_config)
-        module.exit_json(changed=True, argument_spec=module.params, sso_config_response=updateippool_response)
+        module.exit_json(changed=True, argument_spec=module.params, update_response=updateippool_response,
+                         ippool_id=ip_pool_objectid)
     else:
-        module.exit_json(changed=False, argument_spec=module.params)
+        module.exit_json(changed=False, argument_spec=module.params, ippool_config=ippool_config,
+                         ippool_id=ip_pool_objectid)
 
 from ansible.module_utils.basic import *
 
