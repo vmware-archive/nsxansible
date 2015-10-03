@@ -436,7 +436,7 @@ Example:
 ### Module `vcenter_gather_moids`
 ##### Retrieves Managed Object Ids (moids) from vCenter to use them in the NSX plays
 
-The NSX Modules often need vCenter moids to be presented to them. To retrieve them dynamically from vCenter when running
+The NSX modules often need vCenter moids to be presented to them. To retrieve them dynamically from vCenter in
 a playbook, you can use the `vcenter_gather_moids` module.
 
 - hostname:
@@ -448,36 +448,19 @@ Mandatory: The password of your vCenter users
 - datacenter_name:
 Mandatory: The name of the datacenter object to search, and to search subsequent objects in
 - cluster_names:
-Optional: A list of names of clusters to gather moids from
+Optional: The name of the searched cluster object 
 - resourcepool_names:
-Optional: A list of names of resourcepools to gather moids from
+Optional: The name of the searched resourcepool object 
 - dvs_names:
-Optional: A list of names of dvs to gather moids from
+Optional: The name of the searched dvs object 
 - portgroup_names:
-Optional: A list of names of portgroups to gather moids from
+Optional: The name of the searched portgroup object 
 - datastore_names:
-Optional: A list of names of datastores to gather moids from
+Optional: The name of the searched datastore object 
 
-NOTE: All Optional Paramters are lists:
-- If searching only one items moid, you can pass the name as single string like 
-  
-  ```yml
-  dvs_names: 'TransportVDS'
-  ```
+NOTE: All Optional Parameters are single strings. One of the optional parameters needs to be present. Only one parameters
+can be searched in a single task:
 
-- If searching multiple moids: Pass a list of names either like this:
-
-      ```yml
-      cluster_names:
-        - 'compute'
-        - 'management-and-edge'
-      ```
-
-  or with the python dict syntax   
-
-  ```yml
-  cluster_names: ['compute', 'management-and-edge']
-  ```
 
 Example:
 ```yml
@@ -494,21 +477,26 @@ Example:
       username: 'administrator@vsphere.local'
       password: 'vmware'
       datacenter_name: 'nsxlabdc'
-      cluster_names:
-        - 'compute'
-        - 'management-and-edge'
-      resourcepool_names: 'test_rp'
-      dvs_names: 'TransportVDS'
-      portgroup_names: 'VM Network'
-      datastore_names: 'NFS-Storage03'
+      cluster_name: 'compute'
+      #resourcepool_name: 'test_rp'
+      #dvs_name: 'TransportVDS'
+      #portgroup_name: 'VM Network'
+      #datastore_name: 'NFS-Storage03'
     register: gather_moids_output
 
-  - debug: var=gather_moids_output
-  - debug: msg="The moid of the cluster named 'compute' is {{ gather_moids_output.moids.cluster_names.compute }}"
+  - debug: msg="The searched moid is {{ gather_moids_output.object_id }}"
 ```
 
-E.g. to access the managed object Id of the cluster named 'compute' in a subsequent play, you can refer to the moid with {{ gather_moids_output.moids.cluster_names.compute }}. 'gather_moids_output' is the name of the output variable you registered with the play using 'vcenter_gather_moids'. 'moids' is the dict object returned by the module as a result. 'cluster_names' is the dictionary resulting of your list of searched clusters in the clusters_name parameter, and 'compute' is one of the items you passed with the 'cluster_names' parameter.
+The output of the above example is:
 
+```sh
+ok: [localhost] => {
+    "msg": "The searched moid is domain-c28"
+}
+```
+
+The moid of the searched object can be accessed using the 'object_id' attribute of the registered variable. 
+E.g. in the above example you can reference to the cluster with ```{{ gather_moids_output.object_id }}```
 
 ## License
 

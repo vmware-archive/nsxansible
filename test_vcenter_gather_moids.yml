@@ -11,14 +11,11 @@
       username: 'administrator@vsphere.local'
       password: 'vmware'
       datacenter_name: 'nsxlabdc'
-      cluster_names:
-        - 'compute'
-        - 'management-and-edge'
-      resourcepool_names: 'test_rp'
-      dvs_names: 'TransportVDS'
-      portgroup_names: 'VM Network'
-      datastore_names: 'NFS-Storage03'
+      cluster_name: 'compute'
+      #resourcepool_name: 'test_rp'
+      #dvs_name: 'TransportVDS'
+      #portgroup_name: 'VM Network'
+      #datastore_name: 'NFS-Storage03'
     register: gather_moids_output
 
-  - debug: var=gather_moids_output
-  - debug: msg="The moid of the cluster named 'compute' is {{ gather_moids_output.moids.cluster_names.compute }}"
+  - debug: msg="The searched moid is {{ gather_moids_output.object_id }}"

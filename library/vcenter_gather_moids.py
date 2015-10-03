@@ -25,23 +25,23 @@ from pyVmomi import vim, vmodl
 
 
 VIM_TYPES = {'datacenter': [vim.Datacenter],
-             'dvs': [vim.dvs.VmwareDistributedVirtualSwitch],
-             'datastore': [vim.Datastore],
-             'resourcepool': [vim.ResourcePool]}
+             'dvs_name': [vim.dvs.VmwareDistributedVirtualSwitch],
+             'datastore_name': [vim.Datastore],
+             'resourcepool_name': [vim.ResourcePool]}
 
 
-def get_cluster_mo(datacenter_mo, name):
+def get_cluster_mo(datacenter_mo, cluster_name):
     host_folder = datacenter_mo.hostFolder
     for child in host_folder.childEntity:
-        if child.name == name:
+        if child.name == cluster_name:
             return child
     return None
 
 
-def get_portgroup_mo(datacenter_mo, name):
+def get_portgroup_mo(datacenter_mo, portgroup_name):
     network_folder = datacenter_mo.network
     for network in network_folder:
-        if network.name == name:
+        if network.name == portgroup_name:
             return network
     return None
 
@@ -54,13 +54,6 @@ def get_mo(content, searchedname, vim_type_list):
     return None
 
 
-def get_moid_dict(content, vim_type, name_list):
-    result_dict = {}
-    for name in name_list:
-        result_dict.update({name: get_mo(content, name, vim_type)._moId})
-    return result_dict
-
-
 def get_all_objs(content, vimtype):
     obj = {}
     container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
@@ -69,8 +62,8 @@ def get_all_objs(content, vimtype):
     return obj
 
 
-def connect_to_api(vchost, user, pwd):
-    service_instance = SmartConnect(host=vchost, user=user, pwd=pwd)
+def connect_to_api(vchost, vc_user, vc_pwd):
+    service_instance = SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
     return service_instance.RetrieveContent()
 
 
@@ -81,12 +74,14 @@ def main():
             username=dict(required=True),
             password=dict(required=True),
             datacenter_name=dict(required=True),
-            cluster_names=dict(type='list'),
-            resourcepool_names=dict(type='list'),
-            dvs_names=dict(type='list'),
-            portgroup_names=dict(type='list'),
-            datastore_names=dict(type='list')
+            cluster_name=dict(type='str'),
+            resourcepool_name=dict(type='str'),
+            dvs_name=dict(type='str'),
+            portgroup_name=dict(type='str'),
+            datastore_name=dict(type='str')
         ),
+        required_one_of=[['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name']],
+        mutually_exclusive=[['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name']],
         supports_check_mode=False
     )
 
@@ -95,40 +90,22 @@ def main():
     except:
         module.fail_json(msg='exception while connecting to vCenter, check paramters like hostname, username and pwd')
 
-    vcenter_moids = {}
+    searched_parameters = ['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name']
 
     datacenter_mo = get_mo(content, module.params['datacenter_name'], VIM_TYPES['datacenter'])
-    vcenter_moids.update({'datacenter': datacenter_mo._moId})
+    datacenter_moid =  datacenter_mo._moId
 
-    if module.params['cluster_names']:
-        vcenter_moids.update({'cluster_names': {}})
-        for cluster_name in module.params['cluster_names']:
-            cluster_mo = get_cluster_mo(datacenter_mo, cluster_name)
-            vcenter_moids['cluster_names'].update({cluster_name: cluster_mo._moId})
+    for searched_parameter in searched_parameters:
+        if searched_parameter == 'cluster_name' and module.params[searched_parameter]:
+            object_mo = get_cluster_mo(datacenter_mo, module.params[searched_parameter])
+        elif searched_parameter == 'portgroup_name' and module.params[searched_parameter]:
+            object_mo = get_portgroup_mo(datacenter_mo, module.params[searched_parameter])
+        elif searched_parameter and module.params[searched_parameter]:
+            object_mo = get_mo(content, module.params[searched_parameter], VIM_TYPES[searched_parameter])
 
-    if module.params['portgroup_names']:
-        vcenter_moids.update({'portgroup_names': {}})
-        for portgroup_name in module.params['portgroup_names']:
-            portgroup_mo = get_portgroup_mo(datacenter_mo, portgroup_name)
-            vcenter_moids['portgroup_names'].update({portgroup_name: portgroup_mo._moId})
+    object_id = object_mo._moId
 
-    if module.params['resourcepool_names']:
-        vcenter_moids.update({'resourcepool_names': get_moid_dict(content,
-                                                VIM_TYPES['resourcepool'],
-                                                module.params['resourcepool_names'])})
-
-    if module.params['dvs_names']:
-        vcenter_moids.update({'dvs_names': get_moid_dict(content,
-                                                VIM_TYPES['dvs'],
-                                                module.params['dvs_names'])})
-
-    if module.params['datastore_names']:
-        vcenter_moids.update({'datastore_names': get_moid_dict(content,
-                                                VIM_TYPES['datastore'],
-                                                module.params['datastore_names'])})
-
-
-    module.exit_json(changed=False, moids=vcenter_moids)
+    module.exit_json(changed=False, object_id=object_id, datacenter_moid=datacenter_moid)
 
 from ansible.module_utils.basic import *
 
