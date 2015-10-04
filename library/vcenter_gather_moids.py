@@ -22,6 +22,7 @@ __author__ = 'yfauser'
 
 from pyVim.connect import SmartConnect
 from pyVmomi import vim, vmodl
+import requests
 
 
 VIM_TYPES = {'datacenter': [vim.Datacenter],
@@ -72,7 +73,7 @@ def main():
         argument_spec=dict(
             hostname=dict(required=True),
             username=dict(required=True),
-            password=dict(required=True),
+            password=dict(required=True, no_log=True),
             datacenter_name=dict(required=True),
             cluster_name=dict(type='str'),
             resourcepool_name=dict(type='str'),
@@ -87,8 +88,10 @@ def main():
 
     try:
         content = connect_to_api(module.params['hostname'], module.params['username'], module.params['password'])
-    except:
-        module.fail_json(msg='exception while connecting to vCenter, check paramters like hostname, username and pwd')
+    except vim.fault.InvalidLogin:
+        module.fail_json(msg='exception while connecting to vCenter, login failure, check username and password')
+    except requests.exceptions.ConnectionError:
+        module.fail_json(msg='exception while connecting to vCenter, check hostname, FQDN or IP')
 
     searched_parameters = ['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name']
 

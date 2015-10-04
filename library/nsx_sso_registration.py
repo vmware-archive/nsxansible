@@ -42,12 +42,12 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True),
             sso_lookupservice_url=dict(required=True),
             sso_lookupservice_port=dict(required=True),
             sso_lookupservice_server=dict(required=True),
             sso_admin_username=dict(required=True),
-            sso_admin_password=dict(required=True),
+            sso_admin_password=dict(required=True, no_log=True),
             sso_certthumbprint=dict(),
             accept_all_certs=dict(choices=[True, False])
         ),

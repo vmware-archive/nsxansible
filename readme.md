@@ -14,11 +14,14 @@ sudo pip install nsxramlclient
 ```
 More details on this Python client for the NSX for vSphere API can be found here: http://github.com/vmware/nsxramlclient. Additional details on installation is also available.
 
-In addition, the 'vcenter_gather_facts' module requires that you have the vCenter python client 'Pyvmomi' installed. Example of installing PyVmomi using pip:
+In addition, the 'vcenter_gather_facts' and 'deploy_nsx_ova' modules require that you have the vCenter python client 'Pyvmomi' installed. Example of installing PyVmomi using pip:
 ```sh
 sudo pip install pyvmomi
 ```
 More details on this Python client for vCenter can be found here: http://github.com/vmware/pyvmomi. Additional details on installation is also available.
+
+The 'deploy_nsx_ova' module also requires that the machine on which the play is executed has ``ovftool`` installed. 
+Ovftool is part of VMware Fusion on Mac, and can be installed on most Linux systems. For more information see https://www.vmware.com/support/developer/ovf/ 
 
 ## How to use these modules
 
@@ -497,6 +500,87 @@ ok: [localhost] => {
 
 The moid of the searched object can be accessed using the 'object_id' attribute of the registered variable. 
 E.g. in the above example you can reference to the cluster with ```{{ gather_moids_output.object_id }}```
+
+### Module `nsx_deploy_ova`
+##### Deploys the OVA of NSX Manager into a vSphere Cluster
+
+This module uses 'ovftool' to deploy the NSX Manager OVA into a vSphere Cluster. It also uses PyVmomi to check the
+cluster for VMs with the same name to make this module idempotent. In addition it checks if the NSX Manager API is reachable
+and response both on a fresh deployment, as well as if NSX Manager already exists
+
+- ovftool_path:
+Mandatory: The filesystem path to the ovftool. This should be '/usr/bin' on most Linux systems, and '/Applications' on Mac
+- vcenter:
+Mandatory: The vCenter Server in which the OVA File will be deployed
+- vcenter_user:
+Mandatory: The vCenter user to use
+- vcenter_passwd:
+Mandatory: The vCenter user password
+- datacenter:
+Mandatory: The vCenter datacenter object to deploy NSX Manager into
+- datastore:
+Mandatory: The datastore used to place the NSX Manager root disk
+- portgroup:
+Mandatory: The portgroup of the management network to patch NSX Manager into
+- cluster:
+Mandatory: The cluster in which NSX Manager will be deployed
+- vmname:
+Mandatory: The VM name of NSX Manager in the vCenter Inventory
+- hostname:
+Mandatory: The Hostname NSX Manager will be configured to use
+- dns_server:
+Mandatory: The DNS Server NSX Manager will be configured to use
+- dns_domain:
+Mandatory: The DNS Domain NSX Manager will be configured to use
+- gateway:
+Mandatory: The default gateway on the management network
+- netmask:
+Mandatory: The netmask of the management network
+- ip_address:
+Mandatory: The netmask of the management network
+- admin_password:
+Mandatory: The password of the 'admin' user in NSX Manager
+- enable_password:
+Mandatory: The 'enable' password for the NSX Manager CLI
+- path_to_ova:
+Mandatory: The filesystem path in which the NSX Manager OVA file can be found
+- ova_file:
+Mandatory: The NSX Manager OVA File to deploy
+
+Example:
+```yml
+---
+- hosts: jumphost
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: deploy nsx-man
+    nsx_deploy_ova:
+      ovftool_path: '/usr/bin'
+      datacenter: 'YF-Sofia-Lab'
+      datastore: 'storage03-NFS-10GE'
+      portgroup: 'vlan100'
+      cluster: 'management-and-edge'
+      vmname: 'testnsx'
+      hostname: 'testnsx.emea.nicira'
+      dns_server: '172.17.100.11'
+      dns_domain: 'emea.nicira'
+      gateway: '172.17.100.1'
+      ip_address: '172.17.100.61'
+      netmask: '255.255.255.0'
+      admin_password: 'vmware'
+      enable_password: 'vmware'
+      path_to_ova: '/home/nicira/ISOs'
+      ova_file: 'VMware-NSX-Manager-6.1.4-2691049.ova'
+      vcenter: '172.17.100.130'
+      vcenter_user: 'administrator@vsphere.local'
+      vcenter_passwd: 'vmware'
+    register: deploy_nsx_man
+
+#  - debug: var=deploy_nsx_man
+```
+
 
 ## License
 

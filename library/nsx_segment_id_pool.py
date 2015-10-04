@@ -73,7 +73,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True),
             idpoolstart=dict(default=5000),
             idpoolend=dict(default=15000),
             mcast_enabled=dict(default=False),

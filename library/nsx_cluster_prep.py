@@ -56,7 +56,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True),
             cluster_moid=dict(required=True)
         ),
         supports_check_mode=False

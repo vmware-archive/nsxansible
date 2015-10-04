@@ -1,0 +1,30 @@
+---
+- hosts: jumphost
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: deploy nsx-man
+    nsx_deploy_ova:
+      ovftool_path: '/usr/bin'
+      datacenter: 'YF-Sofia-Lab'
+      datastore: 'storage03-NFS-10GE'
+      portgroup: 'vlan100'
+      cluster: 'management-and-edge'
+      vmname: 'testnsx'
+      hostname: 'testnsx.emea.nicira'
+      dns_server: '172.17.100.11'
+      dns_domain: 'emea.nicira'
+      gateway: '172.17.100.1'
+      ip_address: '172.17.100.61'
+      netmask: '255.255.255.0'
+      admin_password: 'vmware'
+      enable_password: 'vmware'
+      path_to_ova: '/home/nicira/ISOs'
+      ova_file: 'VMware-NSX-Manager-6.1.4-2691049.ova'
+      vcenter: '172.17.100.130'
+      vcenter_user: 'administrator@vsphere.local'
+      vcenter_passwd: 'vmware'
+    register: deploy_nsx_man
+
+#  - debug: var=deploy_nsx_man

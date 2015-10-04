@@ -87,7 +87,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True),
             cluster_moid=dict(required=True),
             dvs_moid=dict(required=True),
             ippool_id=dict(),
@@ -115,7 +115,7 @@ def main():
     if vxlan_status == 'GREEN' and module.params['state'] == 'absent':
         unprep_job = vxlan_unprep_cluster(s, module.params['cluster_moid'])
         wait_for_job_completion(s, unprep_job, completion_status='COMPLETED')
-        vxlan_unprep_dvs_context(s, 'dvs-34')
+        vxlan_unprep_dvs_context(s, module.params['dvs_moid'])
         module.exit_json(changed=True)
 
     if vxlan_status != 'GREEN' and module.params['state'] == 'present':

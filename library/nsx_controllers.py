@@ -43,6 +43,7 @@ def create_controllers(session, controller_count, module):
             elif status == 'Failure':
                 return False
             else:
+                status_poll_count += 1
                 time.sleep(30)
 
         if status_poll_count == 20:
@@ -92,7 +93,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True),
             deploytype=dict(default='full', choices=['single', 'full', 'lab']),
             syslog_server=dict(),
             ippool_id=dict(required=True),
