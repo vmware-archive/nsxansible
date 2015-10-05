@@ -26,30 +26,31 @@ import requests
 
 
 def check_nsx_api(module):
-    appliance_check_url = 'https://{}//api/1.0/appliance-management/global/info'.format(module.params['ip_address'])
+    appliance_check_url = 'https://{}//api/2.0/services/vcconfig'.format(module.params['ip_address'])
     try:
         response = requests.request('GET', appliance_check_url,
                                     auth=('admin', module.params['admin_password']), verify=False)
     except requests.exceptions.ConnectionError:
         return False
 
-    if response.status_code != 200:
-        module.fail_json(msg='NSX Manager returned an error code, the response was {} {}'.format(response.status_code,
-                                                                                                 response.content))
-    return True
+    return response.status_code, response.content
 
 
 def wait_for_api(module, sleep_time=15):
     status_poll_count = 0
-    while status_poll_count < 20:
+    while status_poll_count < 30:
         api_status = check_nsx_api(module)
         if api_status:
-            return True
+            if api_status[0] == 200:
+                return True
+            else:
+                status_poll_count += 1
+                time.sleep(sleep_time)
         else:
             status_poll_count += 1
             time.sleep(sleep_time)
 
-        if status_poll_count == 20:
+        if status_poll_count == 30:
             return False
 
 
@@ -116,6 +117,9 @@ def main():
         if not api_status:
             module.fail_json(msg='A VM with the name {} was already present, but the '
                                  'API did not respond'.format(module.params['vmname']))
+        elif api_status[0] != 200:
+            module.fail_json(msg='NSX Manager returned an error code, the response '
+                                 'was {} {}'.format(api_status[0], api_status[1]))
         else:
             module.exit_json(changed=False, nsx_manager_vm=str(nsx_manager_vm))
 
