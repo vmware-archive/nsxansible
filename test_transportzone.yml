@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Transport Zone Creation
+    nsx_transportzone:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: 'present'
+      name: 'TZ1'
+      controlplanemode: 'HYBRID_MODE'
+      description: 'My Transport Zone'
+      cluster_moid_list:
+        - 'domain-c28'
+        - 'domain-c26'
+    register: transport_zone
+
+  - debug: var=transport_zone
