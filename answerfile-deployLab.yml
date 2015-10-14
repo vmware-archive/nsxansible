@@ -1,0 +1,67 @@
+vcHostname: "testvc.emea.nicira"
+vcIpAddress: "172.17.100.60"
+vcUser: "administrator@vsphere.local"
+vcPassword: "vmware"
+vcSsoPassword: "vmware"
+labClusters:
+  cluster1:
+    clusterName: "compute"
+  cluster2:
+    clusterName: "management-and-edge"  
+labVdsName: "TransportVDS"
+dataCenterName: "nsxlabdc"
+deployTolusterName: "{{ labClusters.cluster2.clusterName }}"
+mgmtPortGroup: "VM Network"
+mgmtDatastoreName: "NFS-Storage03"
+mgmtDnsServer: "172.17.100.11"
+mgmtDefaultGateway: "172.17.100.1"
+mgmtNetmask: "255.255.255.0"
+mgmtDnsDomain: "emea.nicira"
+ntpServers: "bg.pool.ntp.org"
+syslogServer: "172.17.100.129"
+ovfToolPath: "/usr/bin"  # Use '/Applications' if using ovftool on a MAC
+
+nsxmanVmName: "testnsx"
+nsxmanHostname: "testnsx.emea.nicira"
+nsxmanIpAddress: "172.17.100.61"
+nsxCliPass: "vmware"
+nsxEnPass: "vmware"
+nsxmanOvaPath: "/home/nicira/ISOs"
+nsxmanOva: "VMware-NSX-Manager-6.1.4-2691049.ova"
+nsxmanager_spec: 
+  raml_file: '/Users/yfauser/Documents/Development/vmware-org/nsxraml/nsxvapiv614.raml'
+  host: "{{ nsxmanIpAddress }}"
+  user: 'admin'
+  password: "{{ nsxCliPass }}"
+
+nsxControllerPortGroup: 'VM Network'
+nsxControllerDatastore: "{{ mgmtDatastoreName }}"
+nsxControllerVcCluster: "{{ labClusters.cluster2.clusterName }}"
+controllerDeployType: 'lab'
+controllerPassword: 'VMware1!VMware1!'
+
+nsxIppools:
+  controller:
+    name: 'controller'
+    start_ip: '172.17.100.66'
+    end_ip: '172.17.100.68'
+    prefix_length: '24'
+    gateway: '172.17.100.1'
+    dns_server_1: '172.17.100.11'
+    dns_server_2: '172.17.100.12'
+  vteps:
+    name: 'vteps'
+    start_ip: '172.17.100.69'
+    end_ip: '172.17.100.72'
+    prefix_length: '24'
+    gateway: '172.17.100.1'
+    dns_server_1: '172.17.100.11'
+    dns_server_2: '172.17.100.12'
+
+transportZoneName: 'TZ1'
+defaultControllPlaneMode: 'HYBRID_MODE'
+
+
+
+
+

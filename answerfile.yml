@@ -1,6 +1,0 @@
-nsxmanager_spec: 
-  raml_file: '/<path-to-directory-where-raml-is-stored>/nsxraml/nsxvapiv614.raml'
-  host: '<name-or-address-of-nsx-manager'
-  user: 'admin'
-  password: '<password-of-your-nsx-manager-admin-account'
-

@@ -30,6 +30,7 @@ def create_controllers(session, controller_count, module):
     controller_spec['controllerSpec']['ipPoolId'] = module.params['ippool_id']
     controller_spec['controllerSpec']['password'] = module.params['password']
     controller_spec['controllerSpec']['hostId'] = module.params['host_moid']
+    controller_spec['controllerSpec']['deployType'] = 'small'
 
     for controller_nr in range(controller_count):
         job_id = session.create('nsxControllers', request_body_dict=controller_spec)['body']
@@ -82,6 +83,9 @@ def get_controller_syslog(session, controller_id_list):
 def set_controller_syslog(session, controller_id, syslog_server):
     syslog_spec = session.extract_resource_body_schema('nsxControllerSyslog', 'create')
     syslog_spec['controllerSyslogServer']['syslogServer'] = syslog_server
+    syslog_spec['controllerSyslogServer']['port'] = '514'
+    syslog_spec['controllerSyslogServer']['protocol'] = 'UDP'
+    syslog_spec['controllerSyslogServer']['level'] = 'INFO'
     session.create('nsxControllerSyslog', uri_parameters={'controllerId': controller_id}, request_body_dict=syslog_spec)
 
 

@@ -3,7 +3,7 @@
   connection: local
   gather_facts: False
   vars_files:
-   - answerfile.yml
+   - answerfile_new_nsxman.yml
   tasks:
   - name: "TEST ~ Create a new MACset (EXPECT changed=true)"
     nsx_macset:

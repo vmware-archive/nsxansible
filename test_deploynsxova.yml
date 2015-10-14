@@ -14,6 +14,7 @@
       vmname: 'testnsx'
       hostname: 'testnsx.emea.nicira'
       dns_server: '172.17.100.11'
+      ntp_server: 'bg.pool.ntp.org'
       dns_domain: 'emea.nicira'
       gateway: '172.17.100.1'
       ip_address: '172.17.100.61'
