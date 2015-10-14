@@ -581,6 +581,55 @@ Example:
 #  - debug: var=deploy_nsx_man
 ```
 
+### Module `nsx_transportzone`
+##### Deploys, updates or deletes a new transport zone in NSX
+
+- name:
+Mandatory: name of the transport zone. Updating the name creates a new switch as it is the unique identifier
+- state:
+present or absent, defaults to present
+- controlplanemode:
+Mandatory: Default Control plane mode for logical switches in the transport zone. The value can be 'UNICAST_MODE',
+'HYBRID_MODE' or 'MULTICAST_MODE'. Default is 'UNICAST_MODE'.
+- cluster_moid_list:
+Mandatory: A list of vSphere managed object ids of clusters that are part of the transport zone. The list can either be a single cluster like 'domain-c26', or a python list ['domain-c26', 'domain-c28'] or list items in the yaml format as documented in the example bellow. Changing the list will add or remove clusters from the TZ.
+
+Example:
+```yml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Transport Zone Creation
+    nsx_transportzone:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: 'present'
+      name: 'TZ1'
+      controlplanemode: 'HYBRID_MODE'
+      description: 'My Transport Zone'
+      cluster_moid_list:
+        - 'domain-c28'
+        - 'domain-c26'
+    register: transport_zone
+
+#  - debug: var=transport_zone
+```
+
+## Example Playbooks and roles
+### As part of this repo you will find example playbooks and roles:
+
+#### Playbooks
+`deployNsx.yml`
+This is a playbook that can be used with the ``base-config-nsx`` and ``deploy-nsx-ova`` roles to deploy NSX 
+in an existing vSphere cluster
+
+#### Roles
+`deploy-nsx-ova`: An example role that uses the ``nsx_deploy_ova`` module to deploy NSX Manager into a vSphere Cluster
+`base-config-nsx`: An example role that creates all needed NSX Objects, Controllers, VIB and configuration for a base NSX deployment
+
 
 ## License
 
