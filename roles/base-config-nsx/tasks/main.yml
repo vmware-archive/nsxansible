@@ -28,8 +28,8 @@
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
-    datacenter_name: "{{ dataCenterName }}"
-    cluster_name: "{{ labClusters.cluster2.clusterName }}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    cluster_name: "{{ targetClusters.cluster2.clusterName }}"
   register: vcenter_mgmt_cluster_moid
   tags: vsphere_facts
 
@@ -39,8 +39,8 @@
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
-    datacenter_name: "{{ dataCenterName }}"
-    datastore_name: "{{ mgmtDatastoreName}}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    datastore_name: "{{ nsxControllerDatastore }}"
   register: vcenter_mgmt_datastore_moid
   tags: vsphere_facts
 
@@ -50,7 +50,7 @@
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
-    datacenter_name: "{{ dataCenterName }}"
+    datacenter_name: "{{ targetDatacenterName }}"
     portgroup_name: "{{ nsxControllerPortGroup }}"
   register: vcenter_mgmt_portgroup_moid
   tags: vsphere_facts
@@ -76,7 +76,7 @@
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       deploytype: "{{ controllerDeployType }}"
-      syslog_server: "{{ syslogServer }}"
+      syslog_server: "{{ controllerSyslogServer }}"
       ippool_id: "{{ controller_ip_pool.ippool_id }}"
       resourcepool_moid: "{{ vcenter_mgmt_cluster_moid.object_id }}"
       datastore_moid: "{{ vcenter_mgmt_datastore_moid.object_id }}"
@@ -90,8 +90,8 @@
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
-    datacenter_name: "{{ dataCenterName }}"
-    cluster_name: "{{ labClusters.cluster1.clusterName }}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    cluster_name: "{{ targetClusters.cluster1.clusterName }}"
   register: vcenter_compute_cluster_moid
   tags: vsphere_facts
 
@@ -119,8 +119,8 @@
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
-    datacenter_name: "{{ dataCenterName }}"
-    dvs_name: "{{ labVdsName }}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    dvs_name: "{{ targetVdsName }}"
   register: vcenter_dvs_moid
   tags: vsphere_facts
 

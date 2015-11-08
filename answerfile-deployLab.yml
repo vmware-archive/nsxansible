@@ -1,44 +1,62 @@
+# Deploy vCenter section
+# the following section defines the vCenter / vSphere environment 
+# were the NSX Manager OVA gets deployed. This can be a separate management vCenter,
+# or the same vCenter to which NSX Manager gets registered
+deployVcIPAdress: '172.17.100.130'
+deployVcUser: 'administrator@vsphere.local'
+deployVcPassword: 'vmware'
+
+# NSX Manager OVA deployment parameters
+# this section holds all parameters needed to deploy the NSX Manager OVA like IP address, etc.
+deployMgmtPortGroup: 'vlan100'
+deployDataCenterName: "YF-Sofia-Lab"
+deployCluster: 'management-and-edge'
+deployMgmtDatastoreName: 'storage03-NFS-10GE'
+deployMgmtIpAddress: '172.17.100.61'
+deployMgmtDefaultGateway: '172.17.100.1'
+deployMgmtNetmask: '255.255.255.0'
+deployMgmtDnsServer: '172.17.100.11'
+deployMgmtDnsDomain: 'emea.nicira'
+deployNtpServers: 'bg.pool.ntp.org'
+deploySyslogServer: '172.17.100.129'
+deployVmName: 'testnsxmanager'
+deployHostname: 'testnsxmanager.emea.nicira'
+nsxCliPass: 'vmware'
+nsxEnPass: 'vmware'
+
+nsxmanOvaPath: '/home/nicira/ISOs'
+nsxmanOva: 'VMware-NSX-Manager-6.1.4-2691049.ova'
+ovfToolPath: '/usr/bin'  # Use '/Applications' if using ovftool on a MAC
+
+# Target 'register' vCenter section
+# the following section defines the vCenter / vSphere environment
+# to which NSX Manager will be registered to. This can be the same as deploy vCenter,
+# or a separate 'payload' vCenter 
 vcHostname: "testvc.emea.nicira"
 vcIpAddress: "172.17.100.60"
 vcUser: "administrator@vsphere.local"
 vcPassword: "vmware"
 vcSsoPassword: "vmware"
-labClusters:
-  cluster1:
-    clusterName: "compute"
-  cluster2:
-    clusterName: "management-and-edge"  
-labVdsName: "TransportVDS"
-dataCenterName: "nsxlabdc"
-deployTolusterName: "{{ labClusters.cluster2.clusterName }}"
-mgmtPortGroup: "VM Network"
-mgmtDatastoreName: "NFS-Storage03"
-mgmtDnsServer: "172.17.100.11"
-mgmtDefaultGateway: "172.17.100.1"
-mgmtNetmask: "255.255.255.0"
-mgmtDnsDomain: "emea.nicira"
-ntpServers: "bg.pool.ntp.org"
-syslogServer: "172.17.100.129"
-ovfToolPath: "/usr/bin"  # Use '/Applications' if using ovftool on a MAC
 
-nsxmanVmName: "testnsx"
-nsxmanHostname: "testnsx.emea.nicira"
-nsxmanIpAddress: "172.17.100.61"
-nsxCliPass: "vmware"
-nsxEnPass: "vmware"
-nsxmanOvaPath: "/home/nicira/ISOs"
-nsxmanOva: "VMware-NSX-Manager-6.1.4-2691049.ova"
+# NSX Manager credentials and RAML file path
 nsxmanager_spec: 
   raml_file: '/Users/yfauser/Documents/Development/vmware-org/nsxraml/nsxvapiv614.raml'
-  host: "{{ nsxmanIpAddress }}"
+  host: "{{ deployMgmtIpAddress }}"
   user: 'admin'
   password: "{{ nsxCliPass }}"
 
+# NSX configuration details
+# including controller deployment environment details and IP Pools
 nsxControllerPortGroup: 'VM Network'
-nsxControllerDatastore: "{{ mgmtDatastoreName }}"
-nsxControllerVcCluster: "{{ labClusters.cluster2.clusterName }}"
+nsxControllerDatastore: 'NFS-Storage03'
+nsxControllerVcCluster: 'management-and-edge'
 controllerDeployType: 'lab'
 controllerPassword: 'VMware1!VMware1!'
+controllerSyslogServer: '172.17.100.129' 
+targetDatacenterName: 'nsxlabdc'
+targetVdsName: 'TransportVDS'
+transportZoneName: 'TZ1'
+defaultControllPlaneMode: 'HYBRID_MODE'
 
 nsxIppools:
   controller:
@@ -58,10 +76,11 @@ nsxIppools:
     dns_server_1: '172.17.100.11'
     dns_server_2: '172.17.100.12'
 
-transportZoneName: 'TZ1'
-defaultControllPlaneMode: 'HYBRID_MODE'
-
-
-
-
-
+# Target vCenter Cluster Section
+# the following section defines which clusters in the target vCenter should
+# be prepared for NSX (VIB deployment)
+targetClusters:
+  cluster1:
+    clusterName: 'compute'
+  cluster2:
+    clusterName: 'management-and-edge'

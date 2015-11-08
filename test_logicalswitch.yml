@@ -8,10 +8,10 @@
   - name: nsx_logical_switch Operation
     nsx_logical_switch:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
-      state: present
+      state: absent
       transportzone: "TZ"
       name: "TestLS"
-      controlplanemode: "UNICAST_MODE"
+      controlplanemode: "HYBRID_MODE"
       description: "My Great Logical Switch"
     register: create_logical_switch
 
