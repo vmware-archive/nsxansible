@@ -18,7 +18,7 @@
     enable_password: "{{ nsxEnPass }}"
     path_to_ova: "{{ nsxmanOvaPath }}"
     ova_file: "{{ nsxmanOva }}"
-    vcenter: "{{ deployVcIPAdress }}"
+    vcenter: "{{ deployVcIPAddress }}"
     vcenter_user: "{{ deployVcUser }}"
     vcenter_passwd: "{{ deployVcPassword }}"
   register: deploy_nsx_man

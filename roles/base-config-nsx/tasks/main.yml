@@ -16,8 +16,8 @@
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     sso_lookupservice_url: 'lookupservice/sdk'
     sso_lookupservice_port: 7444
-    sso_lookupservice_server: "{{ vcHostname }}"
-    sso_admin_username: "{{ vcUser }}"
+    sso_lookupservice_server: "{{ vcSsoHostname }}"
+    sso_admin_username: "{{ vcSsoUser }}"
     sso_admin_password: "{{ vcSsoPassword }}"
     accept_all_certs: true
   tags: nsx_vc_registration

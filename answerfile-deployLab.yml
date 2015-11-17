@@ -2,7 +2,7 @@
 # the following section defines the vCenter / vSphere environment 
 # were the NSX Manager OVA gets deployed. This can be a separate management vCenter,
 # or the same vCenter to which NSX Manager gets registered
-deployVcIPAdress: '172.17.100.130'
+deployVcIPAddress: '172.17.100.130'
 deployVcUser: 'administrator@vsphere.local'
 deployVcPassword: 'vmware'
 
@@ -36,6 +36,8 @@ vcHostname: "testvc.emea.nicira"
 vcIpAddress: "172.17.100.60"
 vcUser: "administrator@vsphere.local"
 vcPassword: "vmware"
+vcSsoHostname: "testvc.emea.nicira"
+vcSsoUser: "administrator@vsphere.local"
 vcSsoPassword: "vmware"
 
 # NSX Manager credentials and RAML file path
