@@ -30,7 +30,7 @@ def create_controllers(session, controller_count, module):
     controller_spec['controllerSpec']['ipPoolId'] = module.params['ippool_id']
     controller_spec['controllerSpec']['password'] = module.params['password']
     controller_spec['controllerSpec']['hostId'] = module.params['host_moid']
-    controller_spec['controllerSpec']['deployType'] = 'small'
+    controller_spec['controllerSpec']['deployType'] = module.params['deploysize']
 
     for controller_nr in range(controller_count):
         job_id = session.create('nsxControllers', request_body_dict=controller_spec)['body']
@@ -99,6 +99,7 @@ def main():
             state=dict(default='present', choices=['present', 'absent']),
             nsxmanager_spec=dict(required=True, no_log=True),
             deploytype=dict(default='full', choices=['single', 'full', 'lab']),
+            deploysize=dict(default='small', choices=['small', 'medium', 'large']),
             syslog_server=dict(),
             ippool_id=dict(required=True),
             resourcepool_moid=dict(required=True),

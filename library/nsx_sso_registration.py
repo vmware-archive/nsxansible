@@ -67,7 +67,8 @@ def main():
                                                         module.params['sso_lookupservice_url'])
 
     sso_cert = ssl.get_server_certificate((module.params['sso_lookupservice_server'],
-                                           module.params['sso_lookupservice_port']))
+                                           module.params['sso_lookupservice_port']),
+                                           ssl_version=2)
     x509_sso = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, sso_cert)
     sso_cert_thumbp = x509_sso.digest('sha1')
 

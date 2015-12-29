@@ -15,7 +15,7 @@
     state: present
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     sso_lookupservice_url: 'lookupservice/sdk'
-    sso_lookupservice_port: 7444
+    sso_lookupservice_port: 443
     sso_lookupservice_server: "{{ vcSsoHostname }}"
     sso_admin_username: "{{ vcSsoUser }}"
     sso_admin_password: "{{ vcSsoPassword }}"
@@ -60,7 +60,7 @@
   nsx_ippool:
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     state: present
-    name: '"{{ nsxIppools.controller.name }}"'
+    name: "{{ nsxIppools.controller.name }}"
     start_ip: "{{ nsxIppools.controller.start_ip }}"
     end_ip: "{{ nsxIppools.controller.end_ip }}"
     prefix_length: "{{ nsxIppools.controller.prefix_length }}"
@@ -166,7 +166,11 @@
   nsx_segment_id_pool:
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     state: present
-    mcast_enabled: true
+    idpoolstart: "{{ segmentIdPoolStart }}"
+    idpoolend: "{{ segmentIdPoolEnd }}"
+    mcast_enabled: "{{ mcastEnabled }}"
+    mcastpoolstart: "{{ mcastAddrStart }}"
+    mcastpoolend: "{{ mcastAddrEnd }}"
   register: segment_pool
   tags: nsx_segment_pool
 
@@ -177,7 +181,7 @@
     state: 'present'
     name: "{{ transportZoneName }}"
     controlplanemode: "{{ defaultControllPlaneMode }}"
-    description: 'Transport Zone created by Ansible'
+    description: "{{ transportZoneDescription }}"
     cluster_moid_list:
       - "{{ vcenter_mgmt_cluster_moid.object_id }}"
       - "{{ vcenter_compute_cluster_moid.object_id }}"

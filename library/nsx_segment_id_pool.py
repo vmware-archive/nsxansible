@@ -76,7 +76,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True),
             idpoolstart=dict(default=5000),
             idpoolend=dict(default=15000),
-            mcast_enabled=dict(default=False),
+            mcast_enabled=dict(type='bool', default=False),
             mcastpoolstart=dict(default='239.0.0.0'),
             mcastpoolend=dict(default='239.255.255.255')
         ),
