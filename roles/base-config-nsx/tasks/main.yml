@@ -68,7 +68,7 @@
     dns_server_1: "{{ nsxIppools.controller.dns_server_1 }}"
     dns_server_2: "{{ nsxIppools.controller.dns_server_2 }}"
   register: controller_ip_pool
-  tags: nsx_ippools
+  tags: controller_nsx_ippools
 
 
 - name: Create NSX Controller cluster
@@ -138,7 +138,7 @@
     dns_server_1: "{{ nsxIppools.vteps.dns_server_1 }}"
     dns_server_2: "{{ nsxIppools.vteps.dns_server_2 }}"
   register: vtep_ip_pool
-  tags: nsx_ippools
+  tags: vtep_nsx_ippools
 
 
 - name: VXLAN Prep (configure VTEP) on compute cluster
