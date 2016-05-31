@@ -38,6 +38,7 @@ def get_lswitch_id(session, lswitchname, scope):
         return [first_page['objectId']]
     elif isinstance(first_page, list):
         return [lswitch['objectId'] for lswitch in first_page if lswitchname in lswitch['name']]
+    return []
 
 
 def get_lswitch_details(session, lswitch_id):
