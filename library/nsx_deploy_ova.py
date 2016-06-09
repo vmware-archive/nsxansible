@@ -20,9 +20,11 @@
 __author__ = 'yfauser'
 
 
-from pyVim.connect import SmartConnect
+from pyVim import connect
 from pyVmomi import vim, vmodl
 import requests
+import ssl
+import atexit
 
 
 def check_nsx_api(module):
@@ -71,7 +73,18 @@ def get_all_objs(content, vimtype):
 
 
 def connect_to_api(vchost, vc_user, vc_pwd):
-    service_instance = SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
+    if hasattr(ssl, 'SSLContext'):
+        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        context.verify_mode = ssl.CERT_NONE
+    else:
+        context = None
+    if context:
+        service_instance = connect.SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd, sslContext=context)
+    else:
+        service_instance = connect.SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
+
+    atexit.register(connect.Disconnect, service_instance)
+
     return service_instance.RetrieveContent()
 
 
