@@ -66,7 +66,7 @@ def state_delete_scope(session, module):
 
 
 def state_create_scope(session, module):
-    vdn_create_spec = session.extract_resource_body_schema('vdnScopes', 'create')
+    vdn_create_spec = session.extract_resource_body_example('vdnScopes', 'create')
     vdn_create_spec['vdnScope']['clusters']['cluster']['cluster']['objectId'] = module.params['cluster_moid_list'][0]
     vdn_create_spec['vdnScope']['name'] = module.params['name']
     vdn_create_spec['vdnScope']['description'] = module.params['description']
@@ -82,7 +82,7 @@ def state_create_scope(session, module):
 
 
 def update_vdnscope_attributes(session, vdn_scope, module):
-    vdn_update_spec = session.extract_resource_body_schema('vdnScopeAttribUpdate', 'update')
+    vdn_update_spec = session.extract_resource_body_example('vdnScopeAttribUpdate', 'update')
     vdn_update_spec['vdnScope']['name'] = module.params['name']
     vdn_update_spec['vdnScope']['description'] = module.params['description']
     vdn_update_spec['vdnScope']['objectId'] = vdn_scope
@@ -94,7 +94,7 @@ def update_vdnscope_attributes(session, vdn_scope, module):
 def change_member_clusters(session, vdn_scope_id, cluster_list, action):
     return_list = []
     for cluster in cluster_list:
-        vdn_edit_spec = session.extract_resource_body_schema('vdnScope', 'create')
+        vdn_edit_spec = session.extract_resource_body_example('vdnScope', 'create')
         vdn_edit_spec['vdnScope']['objectId'] = vdn_scope_id
         vdn_edit_spec['vdnScope']['clusters']['cluster']['cluster']['objectId'] = cluster
         update_response = session.create('vdnScope', uri_parameters={'scopeId': vdn_scope_id},

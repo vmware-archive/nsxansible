@@ -46,7 +46,7 @@ def get_lswitch_details(session, lswitch_id):
 
 
 def create_lswitch(session, lswitchname, lswitchdesc, lswitchcpmode, scope):
-    lswitch_create_dict = session.extract_resource_body_schema('logicalSwitches', 'create')
+    lswitch_create_dict = session.extract_resource_body_example('logicalSwitches', 'create')
     lswitch_create_dict['virtualWireCreateSpec']['controlPlaneMode'] = lswitchcpmode
     lswitch_create_dict['virtualWireCreateSpec']['name'] = lswitchname
     lswitch_create_dict['virtualWireCreateSpec']['description'] = lswitchdesc

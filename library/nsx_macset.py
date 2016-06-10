@@ -65,7 +65,7 @@ def main():
 
     if len(macset_id_lst) is 0 and 'present' in module.params['state']:
         # Create a new macset
-        new_macset = client_session.extract_resource_body_schema('macsetScopeCreate', 'create')
+        new_macset = client_session.extract_resource_body_example('macsetScopeCreate', 'create')
         new_macset['macset']['name'] = module.params['name']
         new_macset['macset']['description'] = module.params['description']
         new_macset['macset']['value'] = module.params['value']

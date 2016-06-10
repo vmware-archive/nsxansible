@@ -29,7 +29,7 @@ def get_mcast_pool(session):
 
 
 def create_segment_id_pool(session, start, end):
-    segments_create_body = session.extract_resource_body_schema('vdnSegmentPools', 'create')
+    segments_create_body = session.extract_resource_body_example('vdnSegmentPools', 'create')
     segments_create_body['segmentRange']['begin'] = start
     segments_create_body['segmentRange']['end'] = end
     segments_create_body['segmentRange']['name'] = 'createdByAnsible'
@@ -37,7 +37,7 @@ def create_segment_id_pool(session, start, end):
 
 
 def create_mcast_pool(session, start, end):
-    mcastpool_create_body = session.extract_resource_body_schema('vdnMulticastPools', 'create')
+    mcastpool_create_body = session.extract_resource_body_example('vdnMulticastPools', 'create')
     mcastpool_create_body['multicastRange']['begin'] = start
     mcastpool_create_body['multicastRange']['end'] = end
     mcastpool_create_body['multicastRange']['name'] = 'createdByAnsible'
@@ -45,7 +45,7 @@ def create_mcast_pool(session, start, end):
 
 
 def update_segment_id_pool(session, pool_id, end):
-    id_pool_body = session.extract_resource_body_schema('vdnSegmentPool', 'update')
+    id_pool_body = session.extract_resource_body_example('vdnSegmentPool', 'update')
     id_pool_body['segmentRange']['end'] = end
     id_pool_body['segmentRange']['name'] = 'createdByAnsible'
     return session.update('vdnSegmentPool', uri_parameters={'segmentPoolId': pool_id},
@@ -53,7 +53,7 @@ def update_segment_id_pool(session, pool_id, end):
 
 
 def update_mcast_pool(session, mcast_pool_id, end):
-    mcast_pool_body = session.extract_resource_body_schema('vdnMulticastPool', 'update')
+    mcast_pool_body = session.extract_resource_body_example('vdnMulticastPool', 'update')
     mcast_pool_body['multicastRange']['end'] = end
     mcast_pool_body['multicastRange']['name'] = 'createdByAnsible'
     return session.update('vdnMulticastPool',

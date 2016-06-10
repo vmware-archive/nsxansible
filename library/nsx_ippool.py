@@ -76,7 +76,7 @@ def main():
     ip_pool_objectid = get_ippool_id(s, module.params['name'])
 
     if not ip_pool_objectid and module.params['state'] == 'present':
-        new_ip_pool = s.extract_resource_body_schema('ipPools', 'create')
+        new_ip_pool = s.extract_resource_body_example('ipPools', 'create')
         new_ip_pool['ipamAddressPool']['ipRanges']['ipRangeDto']['startAddress'] = module.params['start_ip']
         new_ip_pool['ipamAddressPool']['ipRanges']['ipRangeDto']['endAddress'] = module.params['end_ip']
         new_ip_pool['ipamAddressPool']['gateway'] = module.params['gateway']

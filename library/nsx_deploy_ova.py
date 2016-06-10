@@ -21,7 +21,7 @@ __author__ = 'yfauser'
 
 
 from pyVim import connect
-from pyVmomi import vim, vmodl
+from pyVmomi import vim
 import requests
 import ssl
 import atexit

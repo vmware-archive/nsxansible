@@ -28,13 +28,13 @@ def get_cluster_status(session, cluster_moid):
 
 
 def cluster_prep(session, cluster_moid):
-    cluster_prep_body = session.extract_resource_body_schema('nwfabricConfig', 'create')
+    cluster_prep_body = session.extract_resource_body_example('nwfabricConfig', 'create')
     cluster_prep_body['nwFabricFeatureConfig']['resourceConfig']['resourceId'] = cluster_moid
     return session.create('nwfabricConfig', request_body_dict=cluster_prep_body)
 
 
 def cluster_unprep(session, cluster_moid):
-    cluster_prep_body = session.extract_resource_body_schema('nwfabricConfig', 'delete')
+    cluster_prep_body = session.extract_resource_body_example('nwfabricConfig', 'delete')
     cluster_prep_body['nwFabricFeatureConfig']['resourceConfig']['resourceId'] = cluster_moid
     return session.delete('nwfabricConfig', request_body_dict=cluster_prep_body)
 

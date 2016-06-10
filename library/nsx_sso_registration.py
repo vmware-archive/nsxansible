@@ -76,7 +76,7 @@ def main():
         module.params['sso_certthumbprint'] = sso_cert_thumbp
 
     if not check_sso_status(s) and module.params['state'] == 'present':
-        sso_reg = s.extract_resource_body_schema('ssoConfig', 'create')
+        sso_reg = s.extract_resource_body_example('ssoConfig', 'create')
         sso_reg['ssoConfig']['ssoAdminUsername'] = module.params['sso_admin_username']
         sso_reg['ssoConfig']['ssoAdminUserpassword'] = module.params['sso_admin_password']
         sso_reg['ssoConfig']['ssoLookupServiceUrl'] = lookup_service_full_url

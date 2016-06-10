@@ -23,7 +23,7 @@ def get_controller_cluster_info(session):
 
 
 def create_controllers(session, controller_count, module):
-    controller_spec = session.extract_resource_body_schema('nsxControllers', 'create')
+    controller_spec = session.extract_resource_body_example('nsxControllers', 'create')
     controller_spec['controllerSpec']['datastoreId'] = module.params['datastore_moid']
     controller_spec['controllerSpec']['networkId'] = module.params['network_moid']
     controller_spec['controllerSpec']['resourcePoolId'] = module.params['resourcepool_moid']
@@ -81,7 +81,7 @@ def get_controller_syslog(session, controller_id_list):
 
 
 def set_controller_syslog(session, controller_id, syslog_server):
-    syslog_spec = session.extract_resource_body_schema('nsxControllerSyslog', 'create')
+    syslog_spec = session.extract_resource_body_example('nsxControllerSyslog', 'create')
     syslog_spec['controllerSyslogServer']['syslogServer'] = syslog_server
     syslog_spec['controllerSyslogServer']['port'] = '514'
     syslog_spec['controllerSyslogServer']['protocol'] = 'UDP'

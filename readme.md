@@ -3,12 +3,16 @@
 This repository contains a number of Ansible modules, written in Python, that can be used
 to create, read, update and delete objects in NSX for vSphere.
 
+# Version notice
+
+Due to the latest changes to the way schemas are handled in the nsxraml file starting with NSX-v version 6.2.3, nsxansible requires nsxramlclient 2.0.0 or later. To upgrade the nsxramlclient you can do a ``sudo pip install --upgrade nsxramlclient``. Also please use the latest version of the RAML spec.
+
 ## Requirements
 
 This module requires the NSX for vSphere RAML spec (RAML based documentation).
 The latest version of the NSX for vSphere RAML spec (raml file + schema files) can be found and downloaded here: http://github.com/vmware/nsxraml.
 
-The Python based ``nsxramlclient`` must also be installed. Example of installing using pip:
+The Python based ``nsxramlclient`` must also be installed and needs to be on version 2.0.0. Example of installing using pip:
 ```sh
 sudo pip install nsxramlclient
 ```
