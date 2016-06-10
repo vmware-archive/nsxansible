@@ -29,7 +29,7 @@
     username: "{{ vcUser }}"
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
-    cluster_name: "{{ targetClusters.cluster2.clusterName }}"
+    cluster_name: "{{ targetClusters.cluster1.clusterName }}"
   register: vcenter_mgmt_cluster_moid
   tags: vsphere_facts
 
@@ -76,7 +76,6 @@
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       deploytype: "{{ controllerDeployType }}"
-      deploysize: "{{ controllerDeploySize }}"
       syslog_server: "{{ controllerSyslogServer }}"
       ippool_id: "{{ controller_ip_pool.ippool_id }}"
       resourcepool_moid: "{{ vcenter_mgmt_cluster_moid.object_id }}"
