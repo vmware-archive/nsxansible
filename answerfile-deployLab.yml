@@ -58,6 +58,7 @@ controllerSyslogServer: '172.17.100.129'
 targetDatacenterName: 'nsxlabdc'
 targetVdsName: 'TransportVDS'
 transportZoneName: 'TZ1'
+transportZoneDescription: 'Default TZ'
 defaultControllPlaneMode: 'HYBRID_MODE'
 
 nsxIppools:
@@ -77,6 +78,13 @@ nsxIppools:
     gateway: '172.17.100.1'
     dns_server_1: '172.17.100.11'
     dns_server_2: '172.17.100.12'
+
+# ID Pool for VXLAN
+segmentIdPoolStart: '5000'
+segmentIdPoolEnd: '10000'
+mcastEnabled: 'True'
+mcastAddrStart: '239.0.0.0'
+mcastAddrEnd: '239.255.255.255'
 
 # Target vCenter Cluster Section
 # the following section defines which clusters in the target vCenter should
