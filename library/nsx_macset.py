@@ -49,7 +49,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
             transportzone=dict(required=True),
             description=dict(),

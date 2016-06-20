@@ -97,7 +97,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             deploytype=dict(default='full', choices=['single', 'full', 'lab']),
             deploysize=dict(default='small', choices=['small', 'medium', 'large']),
             syslog_server=dict(),
