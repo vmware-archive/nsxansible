@@ -30,7 +30,7 @@ def change_vc_config(session, body_dict):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             vcenter=dict(required=True),
             vcusername=dict(required=True),
             vcpassword=dict(required=True, no_log=True),

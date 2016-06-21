@@ -42,7 +42,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             sso_lookupservice_url=dict(required=True),
             sso_lookupservice_port=dict(required=True),
             sso_lookupservice_server=dict(required=True),
