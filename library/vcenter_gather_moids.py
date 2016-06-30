@@ -23,6 +23,8 @@ __author__ = 'yfauser'
 from pyVim.connect import SmartConnect
 from pyVmomi import vim, vmodl
 import requests
+import ssl
+
 
 
 VIM_TYPES = {'datacenter': [vim.Datacenter],
@@ -64,7 +66,18 @@ def get_all_objs(content, vimtype):
 
 
 def connect_to_api(vchost, vc_user, vc_pwd):
-    service_instance = SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
+    requests.packages.urllib3.disable_warnings()
+    if hasattr(ssl, 'SSLContext'):
+     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+     context.verify_mode = ssl.CERT_NONE
+    else:
+        context = None
+    if context:
+        service_instance = SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd, sslContext=context)
+    else:
+        service_instance = SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
+
+
     return service_instance.RetrieveContent()
 
 
@@ -114,3 +127,4 @@ from ansible.module_utils.basic import *
 
 if __name__ == '__main__':
     main()
+

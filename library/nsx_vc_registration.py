@@ -35,7 +35,7 @@ def main():
             vcusername=dict(required=True),
             vcpassword=dict(required=True, no_log=True),
             vccertthumbprint=dict(),
-            accept_all_certs=dict(choices=[True, False])
+            accept_all_certs=dict(choices=['True', 'False'])
         ),
         required_one_of = [['accept_all_certs','vccertthumbprint']],
         mutually_exclusive = [['accept_all_certs','vccertthumbprint']],
