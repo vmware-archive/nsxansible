@@ -6,3 +6,4 @@ answerfile_TPM_Lab_deploy.yml
 deployNsx_TPM_Lab.yml
 hosts
 .gitignore
+*.retry

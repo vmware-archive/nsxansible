@@ -31,7 +31,7 @@ def get_interfaces(session, interface_name, ldr_id):
     return vnic_index
 
 def config_routing(session, module, ldr_id):
-    ldr_routing_config_body = session.extract_resource_body_schema('routingConfig', 'update')
+    ldr_routing_config_body = session.extract_resource_body_example('routingConfig', 'update')
 
     # Global configuration
     ldr_routing_config_body['routing']['routingGlobalConfig']['routerId']= module.params['ldr_router_id']
@@ -76,7 +76,7 @@ def get_ldr_id(session, ldr_name):
 
 def disable_firewall(session, ldr_id):
     '''Disable firewall'''
-    disable_firewall_body = session.extract_resource_body_schema('nsxEdgeFirewallConfig', 'update')
+    disable_firewall_body = session.extract_resource_body_example('nsxEdgeFirewallConfig', 'update')
     disable_firewall_body['firewall']['enabled']='false'
 
     del disable_firewall_body['firewall']['defaultPolicy']
@@ -91,7 +91,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             ldr_router_name=dict(required=True),
             ldr_router_id=dict(required=True),
             interface_name=dict(required=True),

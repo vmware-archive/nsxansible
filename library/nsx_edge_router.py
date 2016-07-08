@@ -34,8 +34,27 @@ def get_logical_switch(client_session, logical_switch_name):
 
     return logical_switch_id
 
+
+def get_edge(client_session, edge_name):
+    """
+    :param client_session: An instance of an NsxClient Session
+    :param edge_name: The name of the edge searched
+    :return: A tuple, with the first item being the edge or dlr id as string of the first Scope found with the
+             right name and the second item being a dictionary of the logical parameters as return by the NSX API
+    """
+    all_edge = client_session.read_all_pages('nsxEdges', 'read')
+
+    try:
+        edge_params = [scope for scope in all_edge if scope['name'] == edge_name][0]
+        edge_id = edge_params['objectId']
+    except IndexError:
+        return None, None
+
+    return edge_id, edge_params
+
+
 def create_edge_service_gateway(session, module):
-    create_edge_body = session.extract_resource_body_schema('nsxEdges', 'create')
+    create_edge_body = session.extract_resource_body_example('nsxEdges', 'create')
 
     create_edge_body['edge']['name'] = module.params['name']
     create_edge_body['edge']['description'] = module.params['description']
@@ -46,7 +65,7 @@ def create_edge_service_gateway(session, module):
     create_edge_body['edge']['appliances']['appliance']['customField']['key'] = 'system.service.vmware.vsla.main01'
     create_edge_body['edge']['appliances']['appliance']['customField']['value'] = 'string'
 
-    internal_switch_id = get_logical_switch(session,  module.params['edge_int_switch_name'])
+    internal_switch_id = get_logical_switch(session,  module.params['edge_int_logicalswitch_name'])
 
     vnics_info = [{'name': module.params['edge_int_vnic_name'],
                             'index': module.params['edge_int_vnic_index'],
@@ -54,34 +73,34 @@ def create_edge_service_gateway(session, module):
                             'type': 'internal',
                             'portgroupId': internal_switch_id,
                             'fenceParameter':{'key': 'ethernet0.filter1.param1','value': 1},
-                            'addressGroups': {'addressGroup': 
-                                    {'primaryAddress': module.params['edge_int_switch_ip'],
-                                     'subnetPrefixLength': module.params['edge_int_switch_subnet_prefix']}},
-                                     },
+                            'addressGroups': {'addressGroup': {'primaryAddress': module.params['edge_int_vnic_ip'],
+                                                               'subnetPrefixLength':
+                                                                   module.params['edge_int_vnic_subnet_prefix']}}},
                   {'name': module.params['edge_uplink_vnic_name'],
                             'index': module.params['edge_uplink_vnic_index'],
                             'isConnected': 'true',
                             'type': 'uplink',
-                            'portgroupId': module.params['edge_uplink_switch_name'],
+                            'portgroupId': module.params['edge_uplink_portgroup_moid'],
                             'fenceParameter':{'key': 'ethernet0.filter1.param1','value': 1},
                             'addressGroups': {'addressGroup': 
-                                    {'primaryAddress': module.params['edge_uplink_switch_ip'],
-                                     'subnetPrefixLength': module.params['edge_uplink_switch_subnet_prefix']}},
+                                    {'primaryAddress': module.params['edge_uplink_vnic_ip'],
+                                     'subnetPrefixLength': module.params['edge_uplink_vnic_subnet_prefix']}},
                                      },]
 
     create_edge_body['edge']['vnics']['vnic'] = vnics_info
 
-
-    del create_edge_body['edge']['mgmtInterface']
-    del create_edge_body['edge']['interfaces']
     return session.create('nsxEdges', request_body_dict=create_edge_body)
+
+def delete_edge_service_gateway(client_session, esg_id, module):
+    response = client_session.delete('nsxEdge', uri_parameters={'edgeId': esg_id})
+    return response
 
 
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
             description=dict(),
             resourcepool_moid=dict(required=True),
@@ -89,26 +108,45 @@ def main():
             datacenter_moid=dict(required=True),
             edge_int_vnic_index=dict(required=True),
             edge_int_vnic_name=dict(required=True),
-            edge_int_switch_name=dict(required=True),
-            edge_int_switch_ip=dict(required=True),
-            edge_int_switch_subnet_prefix=dict(required=True),
+            edge_int_logicalswitch_name=dict(required=True),
+            edge_int_vnic_ip=dict(required=True),
+            edge_int_vnic_subnet_prefix=dict(required=True),
             edge_uplink_vnic_index=dict(required=True),
             edge_uplink_vnic_name=dict(required=True),
-            edge_uplink_switch_name=dict(required=True),
-            edge_uplink_switch_ip=dict(required=True),
-            edge_uplink_switch_subnet_prefix=dict(required=True),
+            edge_uplink_portgroup_moid=dict(required=True),
+            edge_uplink_vnic_ip=dict(required=True),
+            edge_uplink_vnic_subnet_prefix=dict(required=True),
         ),
         supports_check_mode=False
     )
 
     from nsxramlclient.client import NsxClient
-    client_session=NsxClient(module.params['nsxmanager_spec']['raml_file'],
-                             module.params['nsxmanager_spec']['host'],
-                             module.params['nsxmanager_spec']['user'],
-                             module.params['nsxmanager_spec']['password'])
-    edge_gateway_response=create_edge_service_gateway(client_session, module)
-    module.exit_json(changed=True, argument_spec=module.params['state'],
-                     edge_gateway_response=edge_gateway_response)
+    client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'],
+                               module.params['nsxmanager_spec']['host'],
+                               module.params['nsxmanager_spec']['user'],
+                               module.params['nsxmanager_spec']['password'])
+
+    changed = False
+    esg_create_response = {}
+    esg_delete_response = {}
+
+    if module.params['state'] == 'present':
+        edge_id, edge_params = get_edge(client_session, module.params['name'])
+        if not edge_id:
+            esg_create_response = create_edge_service_gateway(client_session, module)
+            changed = True
+    elif module.params['state'] == 'absent':
+        edge_id, edge_params = get_edge(client_session, module.params['name'])
+        if edge_id:
+            esg_delete_response = delete_edge_service_gateway(client_session, edge_id, module)
+            changed = True
+
+    if changed:
+        module.exit_json(changed=True, esg_create_response=esg_create_response,
+                         esg_delete_response=esg_delete_response)
+    else:
+        module.exit_json(changed=False, esg_create_response=esg_create_response,
+                         esg_delete_response=esg_delete_response)
 
 
 from ansible.module_utils.basic import *

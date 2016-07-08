@@ -34,7 +34,7 @@ def get_logical_switch(client_session, logical_switch_name):
     return logical_switch_id
 
 def create_ldr(client_session, module):
-    dlr_create_dict = client_session.extract_resource_body_schema('nsxEdges', 'create')
+    dlr_create_dict = client_session.extract_resource_body_example('nsxEdges', 'create')
 
     dlr_create_dict['edge']['name'] = module.params['name']
     dlr_create_dict['edge']['description'] = module.params['description']
@@ -75,7 +75,7 @@ def create_ldr(client_session, module):
     return client_session.create('nsxEdges', request_body_dict=dlr_create_dict)
 
 def configure_ha(session, edge_id):
-    edge_ha_body = session.extract_resource_body_schema('highAvailability', 'update')
+    edge_ha_body = session.extract_resource_body_example('highAvailability', 'update')
     edge_ha_body['highAvailability']['declareDeadTime'] = 20
     edge_ha_body['highAvailability']['enabled'] = 'true'
 
@@ -87,7 +87,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
             description=dict(),
             resourcepool_moid=dict(required=True),

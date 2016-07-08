@@ -1,0 +1,92 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: gather moid for ds
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      datastore_name: "{{ vcenter_datastore }}"
+    register: gather_moids_ds
+    tags: esg_create
+  - name: gather moid for cl
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      cluster_name: "{{ vcenter_edge_cluster }}"
+    register: gather_moids_cl
+    tags: esg_create
+  - name: gather moid for uplink vnic
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      portgroup_name: 'vlan41'
+    register: gather_moids_upl_pg
+    tags: esg_create
+
+  - name: ESG creation
+    nsx_edge_router:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansibleESG'
+      description: 'This ESG is created by nsxansible'
+      resourcepool_moid: "{{ gather_moids_cl.object_id }}"
+      datastore_moid: "{{ gather_moids_ds.object_id }}"
+      datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
+      edge_int_vnic_index: '1'
+      edge_int_vnic_name: 'Internal vnic'
+      edge_int_logicalswitch_name: 'edge_ls'
+      edge_int_vnic_ip: '192.168.178.1'
+      edge_int_vnic_subnet_prefix: '24'
+      edge_uplink_vnic_index: '0'
+      edge_uplink_vnic_name: 'Uplink vnic'
+      edge_uplink_portgroup_moid: "{{ gather_moids_upl_pg.object_id }}"
+      edge_uplink_vnic_ip: '10.10.10.2'
+      edge_uplink_vnic_subnet_prefix: '24'
+    register: create_esg
+    tags: esg_create
+
+  - debug: var=create_esg
+
+  - name: ESG config
+    nsx_edge_router_config:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      esg_name: 'ansibleESG'
+      router_id: '10.10.10.2'
+      internal_vnic_name: 'Internal vnic'
+      uplink_vnic_name: 'Uplink vnic'
+    register: config_esg
+    tags: esg_config
+
+  - debug: var=config_esg
+
+  - name: ESG Delete
+    nsx_edge_router:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      name: 'ansibleESG'
+      resourcepool_moid: ''
+      datastore_moid: ''
+      datacenter_moid: ''
+      edge_int_vnic_index: ''
+      edge_int_vnic_name: ''
+      edge_int_logicalswitch_name: ''
+      edge_int_vnic_ip: ''
+      edge_int_vnic_subnet_prefix: ''
+      edge_uplink_vnic_index: ''
+      edge_uplink_vnic_name: ''
+      edge_uplink_portgroup_moid: ''
+      edge_uplink_vnic_ip: ''
+      edge_uplink_vnic_subnet_prefix: ''
+    register: delete_esg
+    tags: esg_delete
+    

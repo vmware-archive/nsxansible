@@ -18,48 +18,46 @@
 # IN THE SOFTWARE.
 
 def config_routing(session, module, edge_id):
-    edge_routing_config_body = session.extract_resource_body_schema('routingConfig', 'update')
+
+    edge_routing_config_body = session.read('routingConfig', uri_parameters={'edgeId': edge_id})['body']
 
     edge_routing_config_body['routing']['routingGlobalConfig']['routerId']= module.params['router_id']
     edge_routing_config_body['routing']['routingGlobalConfig']['ecmp']= 'true'
 
     int_vnic_index = get_vnic_index(session, edge_id, module.params['internal_vnic_name'])
     uplink_vnic_index = get_vnic_index(session, edge_id, module.params['uplink_vnic_name'])
-    edge_routing_config_body['routing']['ospf']['enabled'] = 'true'
+
     new_areas = [{'areaId':0, 'type':'normal'},
                  {'areaId':1,'type':'normal'}]
-    edge_routing_config_body['routing']['ospf']['ospfAreas']['ospfArea']= new_areas
 
     interface = [ {'vnic':int_vnic_index, 'areaId':0},
                   {'vnic':uplink_vnic_index, 'areaId':1}]
 
-    edge_routing_config_body['routing']['ospf']['ospfInterfaces']['ospfInterface']=interface
-    edge_routing_config_body['routing']['ospf']['redistribution']['enabled']='true'
-
-    del edge_routing_config_body['routing']['ospf']['redistribution']['rules']
-    del edge_routing_config_body['routing']['staticRouting']
-    del edge_routing_config_body['routing']['routingGlobalConfig']['ipPrefixes']
-    del edge_routing_config_body['routing']['ospf']['defaultOriginate']
-    del edge_routing_config_body['routing']['ospf']['gracefulRestart']
-    del edge_routing_config_body['routing']['ospf']['protocolAddress']
-    del edge_routing_config_body['routing']['ospf']['forwardingAddress']
-    del edge_routing_config_body['routing']['isis']
-    del edge_routing_config_body['routing']['bgp']
+    edge_routing_config_body['routing']['ospf'] = {'enabled': 'true',
+                                                   'ospfAreas': {'ospfArea': new_areas},
+                                                   'ospfInterfaces': {'ospfInterface': interface},
+                                                   'redistribution': {'enabled': 'true'}}
 
     return session.update('routingConfig', uri_parameters={'edgeId': edge_id},
                            request_body_dict=edge_routing_config_body)
 
-def get_edge_id(session, edge_name):
-    router_res = session.read('nsxEdges', 'read')['body']
-    edge_summary_list = router_res['pagedEdgeList']['edgePage']['edgeSummary']
-    if isinstance(edge_summary_list, list):
-        for edge_summary in edge_summary_list:
-            if edge_name.lower() in edge_summary['name'].lower():
-                edge_id = edge_summary['objectId']
-                return edge_id
-    else:
-        edge_id = router_res['pagedEdgeList']['edgePage']['edgeSummary']['objectId']
-        return edge_id
+
+def get_edge(client_session, edge_name):
+    """
+    :param client_session: An instance of an NsxClient Session
+    :param edge_name: The name of the edge searched
+    :return: A tuple, with the first item being the edge or dlr id as string of the first Scope found with the
+             right name and the second item being a dictionary of the logical parameters as return by the NSX API
+    """
+    all_edge = client_session.read_all_pages('nsxEdges', 'read')
+
+    try:
+        edge_params = [scope for scope in all_edge if scope['name'] == edge_name][0]
+        edge_id = edge_params['objectId']
+    except IndexError:
+        return None, None
+
+    return edge_id, edge_params
 
 def get_vnic_index(session, edge_id, vnic_name):
     '''Get vnic index for ospf interface mapping'''
@@ -73,7 +71,7 @@ def get_vnic_index(session, edge_id, vnic_name):
 
 def disable_firewall(session, edge_id):
     '''Disable firewall'''
-    disable_firewall_body = session.extract_resource_body_schema('nsxEdgeFirewallConfig', 'update')
+    disable_firewall_body = session.extract_resource_body_example('nsxEdgeFirewallConfig', 'update')
     disable_firewall_body['firewall']['enabled']='false'
 
     del disable_firewall_body['firewall']['defaultPolicy']
@@ -88,9 +86,8 @@ def disable_firewall(session, edge_id):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            state=dict(default='present', choices=['present', 'absent']),
-            nsxmanager_spec=dict(required=True, no_log=True),
-            router_name=dict(required=True),
+            nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
+            esg_name=dict(required=True),
             router_id=dict(required=True),
             internal_vnic_name=dict(required=True),
             uplink_vnic_name=dict(required=True),
@@ -104,10 +101,12 @@ def main():
                              module.params['nsxmanager_spec']['user'],
                              module.params['nsxmanager_spec']['password'])
 
-    edge_id = get_edge_id(client_session, module.params['router_name'])
-    disable=disable_firewall(client_session, edge_id)
+    edge_id, edge_params = get_edge(client_session, module.params['esg_name'])
+
+    disable_firewall(client_session, edge_id)
     edge_response=config_routing(client_session, module, edge_id)
-    module.exit_json(changed=True, argument_spec=module.params['state'], edge_response=edge_response)
+
+    module.exit_json(changed=True, edge_response=edge_response)
 
 
 from ansible.module_utils.basic import *
