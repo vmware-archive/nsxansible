@@ -1,0 +1,92 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: gather moid for ds
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      datastore_name: "{{ vcenter_datastore }}"
+    register: gather_moids_ds
+    tags: dlr_create
+  - name: gather moid for cl
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      cluster_name: "{{ vcenter_edge_cluster }}"
+    register: gather_moids_cl
+    tags: dlr_create
+  - name: gather moid for mgmt portgroup
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      portgroup_name: 'vlan41'
+    register: gather_moids_pg
+    tags: dlr_create
+
+  - name: DLR creation
+    nsx_dlr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansibleDLR'
+      description: 'This DLR is created by nsxansible'
+      resourcepool_moid: "{{ gather_moids_cl.object_id }}"
+      datastore_moid: "{{ gather_moids_ds.object_id }}"
+      datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
+      mgmt_portgroup_moid: "{{ gather_moids_pg.object_id }}"
+      internal_interface_name: 'Internal iface'
+      interface_int_logicalswitch_name: 'edge_ls'
+      interface_int_ip: '172.16.1.1'
+      interface_int_subnet_mask: '255.255.255.0'
+      uplink_interface_name: 'Uplink vnic'
+      interface_uplink_logicalswitch_name: 'dlr_ls'
+      interface_uplink_ip: '10.10.10.1'
+      interface_uplink_subnet_mask: '255.255.255.0'
+    register: create_dlr
+    tags: dlr_create
+
+  - debug: var=create_dlr
+
+  - name: DLR config
+    nsx_dlr_config:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      dlr_router_name: 'ansibleDLR'
+      dlr_router_id: '10.10.10.3'
+      uplink_interface_name: 'Uplink vnic'
+      protocol_address: '10.10.10.3'
+      forwarding_address: '10.10.10.1'
+    register: config_dlr
+    tags: dlr_config
+
+  - debug: var=config_dlr
+
+  - name: DLR Delete
+    nsx_dlr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      name: 'ansibleDLR'
+      resourcepool_moid: ''
+      datastore_moid: ''
+      datacenter_moid: ''
+      mgmt_portgroup_moid: ''
+      internal_interface_name: ''
+      interface_int_logicalswitch_name: ''
+      interface_int_ip: ''
+      interface_int_subnet_mask: ''
+      uplink_interface_name: ''
+      interface_uplink_logicalswitch_name: ''
+      interface_uplink_ip: ''
+      interface_uplink_subnet_mask: ''
+    register: delete_dlr
+    tags: dlr_delete
+    
+  - debug: var=delete_dlr

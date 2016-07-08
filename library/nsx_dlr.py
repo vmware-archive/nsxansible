@@ -33,7 +33,31 @@ def get_logical_switch(client_session, logical_switch_name):
 
     return logical_switch_id
 
-def create_ldr(client_session, module):
+
+def get_dlr(client_session, dlr_name):
+    """
+    :param client_session: An instance of an NsxClient Session
+    :param edge_name: The name of the edge searched
+    :return: A tuple, with the first item being the edge or dlr id as string of the first Scope found with the
+             right name and the second item being a dictionary of the logical parameters as return by the NSX API
+    """
+    all_edge = client_session.read_all_pages('nsxEdges', 'read')
+
+    try:
+        edge_params = [scope for scope in all_edge if scope['name'] == dlr_name][0]
+        edge_id = edge_params['objectId']
+    except IndexError:
+        return None, None
+
+    return edge_id, edge_params
+
+
+def delete_dlr(client_session, dlr_id, module):
+    response = client_session.delete('nsxEdge', uri_parameters={'edgeId': dlr_id})
+    return response
+
+
+def create_dlr(client_session, module):
     dlr_create_dict = client_session.extract_resource_body_example('nsxEdges', 'create')
 
     dlr_create_dict['edge']['name'] = module.params['name']
@@ -42,37 +66,38 @@ def create_ldr(client_session, module):
     dlr_create_dict['edge']['datacenterMoid'] = module.params['datacenter_moid']
     dlr_create_dict['edge']['appliances']['appliance']['resourcePoolId'] = module.params['resourcepool_moid']
     dlr_create_dict['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
-    dlr_create_dict['edge']['mgmtInterface'] = {'connectedToId': module.params['portgroup_moid']}
+    dlr_create_dict['edge']['mgmtInterface'] = {'connectedToId': module.params['mgmt_portgroup_moid']}
 
     # Get logical Switch ID for interface connection
-    internal_switch_id = get_logical_switch(client_session,
-                            module.params['interface_int_switch_name'])
-    uplink_switch_id= get_logical_switch(client_session,
-                            module.params['interface_uplink_switch_name'])
+    internal_switch_id = get_logical_switch(client_session, module.params['interface_int_logicalswitch_name'])
+    uplink_switch_id = get_logical_switch(client_session, module.params['interface_uplink_logicalswitch_name'])
 
     interfaces=[{'name': module.params['uplink_interface_name'],
                              'type': 'uplink',
                              'isConnected': "True",
                              'connectedToId': uplink_switch_id, # second switch connected to uplink
                              'addressGroups': {'addressGroup': 
-                                              {'primaryAddress': module.params['interface_uplink_switch_ip'],
-                                                'subnetMask': module.params['interface_uplink_switch_subnet_mask']
+                                              {'primaryAddress': module.params['interface_uplink_ip'],
+                                                'subnetMask': module.params['interface_uplink_subnet_mask']
                                                }}},
                {'name': module.params['internal_interface_name'],
                  'type': 'internal',
                  'isConnected': "True",
                  'connectedToId': internal_switch_id, # first switch connected to internal
                  'addressGroups': {'addressGroup': 
-                                  {'primaryAddress': module.params['interface_int_switch_ip'],
-                                    'subnetMask': module.params['interface_int_switch_subnet_mask']
+                                  {'primaryAddress': module.params['interface_int_ip'],
+                                    'subnetMask': module.params['interface_int_subnet_mask']
                                    }}
                 }]
-    dlr_create_dict['edge']['interfaces']['interface'] = interfaces
+
+    dlr_create_dict['edge']['interfaces'] = {'interface': interfaces}
+
     del dlr_create_dict['edge']['vnics']
     del dlr_create_dict['edge']['appliances']['appliance']['hostId']
     del dlr_create_dict['edge']['appliances']['appliance']['customField']
 
     return client_session.create('nsxEdges', request_body_dict=dlr_create_dict)
+
 
 def configure_ha(session, edge_id):
     edge_ha_body = session.extract_resource_body_example('highAvailability', 'update')
@@ -92,16 +117,16 @@ def main():
             description=dict(),
             resourcepool_moid=dict(required=True),
             datastore_moid=dict(required=True),
-            portgroup_moid=dict(required=True),
+            mgmt_portgroup_moid=dict(required=True),
             datacenter_moid=dict(required=True),
             internal_interface_name=dict(required=True),
-            interface_int_switch_name=dict(required=True),
-            interface_int_switch_ip=dict(required=True),
-            interface_int_switch_subnet_mask=dict(required=True),
+            interface_int_logicalswitch_name=dict(required=True),
+            interface_int_ip=dict(required=True),
+            interface_int_subnet_mask=dict(required=True),
             uplink_interface_name=dict(required=True),
-            interface_uplink_switch_name=dict(required=True),
-            interface_uplink_switch_ip=dict(required=True),
-            interface_uplink_switch_subnet_mask=dict(required=True),
+            interface_uplink_logicalswitch_name=dict(required=True),
+            interface_uplink_ip=dict(required=True),
+            interface_uplink_subnet_mask=dict(required=True),
         ),
         supports_check_mode=False
     )
@@ -112,13 +137,30 @@ def main():
                              module.params['nsxmanager_spec']['user'],
                              module.params['nsxmanager_spec']['password'])
 
-    ldr_response=create_ldr(client_session, module)
+    changed = False
+    dlr_create_response = {}
+    dlr_delete_response = {}
 
-    # Configure HA for deployed Logical Distributed Router
-    ha_response = configure_ha(client_session, ldr_response['objectId'])
+    if module.params['state'] == 'present':
+        dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
+        if not dlr_id:
+            dlr_create_response = create_dlr(client_session, module)
+            # Configure HA for deployed Logical Distributed Router
+            ha_response = configure_ha(client_session, dlr_create_response['objectId'])
+            changed = True
+    elif module.params['state'] == 'absent':
+        dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
+        if dlr_id:
+            dlr_delete_response = delete_dlr(client_session, dlr_id, module)
+            changed = True
 
-    module.exit_json(changed=True, argument_spec=module.params['state'],
-                     ldr_response=ldr_response)
+    if changed:
+        module.exit_json(changed=True, dlr_create_response=dlr_create_response,
+                         dlr_delete_response=dlr_delete_response)
+    else:
+        module.exit_json(changed=False, dlr_create_response=dlr_create_response,
+                         dlr_delete_response=dlr_delete_response)
+
 
 from ansible.module_utils.basic import *
 if __name__ == '__main__':

@@ -30,37 +30,31 @@ def get_interfaces(session, interface_name, ldr_id):
 
     return vnic_index
 
+
 def config_routing(session, module, ldr_id):
-    ldr_routing_config_body = session.extract_resource_body_example('routingConfig', 'update')
+    ldr_routing_config_body = session.read('routingConfig', uri_parameters={'edgeId': ldr_id})['body']
 
     # Global configuration
-    ldr_routing_config_body['routing']['routingGlobalConfig']['routerId']= module.params['ldr_router_id']
+    ldr_routing_config_body['routing']['routingGlobalConfig']['routerId']= module.params['dlr_router_id']
     ldr_routing_config_body['routing']['routingGlobalConfig']['ecmp']= 'true'
 
-    vnic_index = get_interfaces(session, module.params['interface_name'], ldr_id)
+    vnic_index = get_interfaces(session, module.params['uplink_interface_name'], ldr_id)
+
+    if not vnic_index:
+        module.fail_json(msg='Uplink interface not found')
+
     ldr_routing_config_body['routing']['ospf']['enabled'] = 'true'
-    ldr_routing_config_body['routing']['ospf']['ospfAreas']['ospfArea']=\
-                                {'areaId': 0,
-                                'type': 'normal'}
+    ldr_routing_config_body['routing']['ospf']['ospfAreas'] = {'ospfArea': {'areaId': 0, 'type': 'normal'}}
 
-    ldr_routing_config_body['routing']['ospf']['ospfInterfaces']['ospfInterface']=\
-                        {'vnic': vnic_index, # Nic index where uplink switch is connected
-                        'areaId': 0}
+    ldr_routing_config_body['routing']['ospf']['ospfInterfaces'] = {'ospfInterface': {'vnic': vnic_index, 'areaId': 0}}
 
-    ldr_routing_config_body['routing']['ospf']['protocolAddress']=module.params['protocol_address']
-    ldr_routing_config_body['routing']['ospf']['forwardingAddress']=module.params['forwarding_address']
-    ldr_routing_config_body['routing']['ospf']['redistribution']['enabled']='true'
-
-    del ldr_routing_config_body['routing']['ospf']['redistribution']['rules']
-    del ldr_routing_config_body['routing']['staticRouting']
-    del ldr_routing_config_body['routing']['routingGlobalConfig']['ipPrefixes']
-    del ldr_routing_config_body['routing']['ospf']['defaultOriginate']
-    del ldr_routing_config_body['routing']['ospf']['gracefulRestart']
-    del ldr_routing_config_body['routing']['isis']
-    del ldr_routing_config_body['routing']['bgp']
+    ldr_routing_config_body['routing']['ospf']['protocolAddress'] = module.params['protocol_address']
+    ldr_routing_config_body['routing']['ospf']['forwardingAddress'] = module.params['forwarding_address']
+    ldr_routing_config_body['routing']['ospf']['redistribution']['enabled'] = 'true'
 
     return session.update('routingConfig', uri_parameters={'edgeId': ldr_id},
                            request_body_dict=ldr_routing_config_body)
+
 
 def get_ldr_id(session, ldr_name):
     router_res = session.read('nsxEdges', 'read')['body']
@@ -73,6 +67,7 @@ def get_ldr_id(session, ldr_name):
     else:
         edge_id = router_res['pagedEdgeList']['edgePage']['edgeSummary']['objectId']
         return edge_id
+
 
 def disable_firewall(session, ldr_id):
     '''Disable firewall'''
@@ -87,15 +82,14 @@ def disable_firewall(session, ldr_id):
                           uri_parameters={'edgeId': ldr_id},
                           request_body_dict=disable_firewall_body)
 
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            state=dict(default='present', choices=['present', 'absent']),
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
-            ldr_router_name=dict(required=True),
-            ldr_router_id=dict(required=True),
-            interface_name=dict(required=True),
-            #interface_area_id=dict(required=True),
+            dlr_router_name=dict(required=True),
+            dlr_router_id=dict(required=True),
+            uplink_interface_name=dict(required=True),
             protocol_address=dict(required=True),
             forwarding_address=dict(required=True),
         ),
@@ -108,10 +102,10 @@ def main():
                              module.params['nsxmanager_spec']['user'],
                              module.params['nsxmanager_spec']['password'])
 
-    ldr_id=get_ldr_id(client_session, module.params['ldr_router_name'])
-    disable=disable_firewall(client_session, ldr_id)
+    ldr_id=get_ldr_id(client_session, module.params['dlr_router_name'])
     ldr_response=config_routing(client_session, module, ldr_id)
-    module.exit_json(changed=True, argument_spec=module.params['state'], ldr_response=ldr_response)
+    module.exit_json(changed=True, ldr_response=ldr_response)
+
 
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
