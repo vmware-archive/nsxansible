@@ -64,6 +64,10 @@ def create_edge_service_gateway(session, module):
     create_edge_body['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
     create_edge_body['edge']['appliances']['appliance']['customField']['key'] = 'system.service.vmware.vsla.main01'
     create_edge_body['edge']['appliances']['appliance']['customField']['value'] = 'string'
+    if module.params['remote_access'] == 'true':
+        create_edge_body['edge']['cliSettings'] = {'password': module.params['password'],
+                                                   'remoteAccess': module.params['remote_access'],
+                                                   'userName': module.params['username']}
 
     internal_switch_id = get_logical_switch(session,  module.params['edge_int_logicalswitch_name'])
 
@@ -89,11 +93,72 @@ def create_edge_service_gateway(session, module):
 
     create_edge_body['edge']['vnics']['vnic'] = vnics_info
 
-    return session.create('nsxEdges', request_body_dict=create_edge_body)
+    response = session.create('nsxEdges', request_body_dict=create_edge_body)
+    edge_id = response['objectId']
+    edge_params = response['body']
 
-def delete_edge_service_gateway(client_session, esg_id, module):
+    return edge_id, edge_params
+
+
+def delete_edge_service_gateway(client_session, esg_id):
     response = client_session.delete('nsxEdge', uri_parameters={'edgeId': esg_id})
     return response
+
+
+def get_esg_routes(client_session, esg_id):
+    rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']
+    if rtg_cfg['staticRouting']['staticRoutes']:
+        routes = client_session.normalize_list_return(rtg_cfg['staticRouting']['staticRoutes']['route'])
+    else:
+        routes = []
+
+    dfgw_dict = rtg_cfg['staticRouting'].get('defaultRoute', '')
+    if dfgw_dict != '':
+        dfgw = dfgw_dict.get('gatewayAddress', '')
+    else:
+        dfgw = None
+
+    return routes, dfgw
+
+
+def config_def_gw(client_session, esg_id, dfgw):
+    rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']
+    if dfgw:
+        try:
+            rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
+        except KeyError:
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': '1', 'mtu': '1500'}
+    else:
+        rtg_cfg['staticRouting']['defaultRoute'] = None
+
+    cfg_result = client_session.update('routingConfigStatic', uri_parameters={'edgeId': esg_id},
+                                       request_body_dict=rtg_cfg)
+    if cfg_result['status'] == 204:
+        return True
+    else:
+        return False
+
+
+def get_firewall_state(client_session, esg_id):
+    fw_state = client_session.read('nsxEdgeFirewallConfig', uri_parameters={'edgeId': esg_id})['body']
+
+    if fw_state['firewall']['enabled'] == 'false':
+        return False
+    elif fw_state['firewall']['enabled'] == 'true':
+        return True
+    else:
+        return None
+
+
+def set_firewall(client_session, esg_id, state):
+    firewall_body = client_session.read('nsxEdgeFirewallConfig', uri_parameters={'edgeId': esg_id})['body']
+    if state:
+        firewall_body['firewall']['enabled'] = 'true'
+    elif not state:
+        firewall_body['firewall']['enabled'] = 'false'
+
+    return client_session.update('nsxEdgeFirewallConfig', uri_parameters={'edgeId': esg_id},
+                                 request_body_dict=firewall_body)
 
 
 def main():
@@ -116,30 +181,59 @@ def main():
             edge_uplink_portgroup_moid=dict(required=True),
             edge_uplink_vnic_ip=dict(required=True),
             edge_uplink_vnic_subnet_prefix=dict(required=True),
+            default_gateway=dict(),
+            username=dict(),
+            password=dict(),
+            remote_access=dict(default='false', choices=['true', 'false']),
+            firewall=dict(default='true', choices=['true', 'false'])
         ),
         supports_check_mode=False
     )
+
+    if module.params['remote_access'] == 'true' and not (module.params['password'] and module.params['username']):
+        module.fail_json(msg='if remote access is enabled, username and password must be set')
 
     from nsxramlclient.client import NsxClient
     client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'],
                                module.params['nsxmanager_spec']['host'],
                                module.params['nsxmanager_spec']['user'],
                                module.params['nsxmanager_spec']['password'])
-
     changed = False
     esg_create_response = {}
     esg_delete_response = {}
+    edge_id = None
 
     if module.params['state'] == 'present':
         edge_id, edge_params = get_edge(client_session, module.params['name'])
         if not edge_id:
-            esg_create_response = create_edge_service_gateway(client_session, module)
+            edge_id, edge_params = create_edge_service_gateway(client_session, module)
             changed = True
     elif module.params['state'] == 'absent':
         edge_id, edge_params = get_edge(client_session, module.params['name'])
         if edge_id:
-            esg_delete_response = delete_edge_service_gateway(client_session, edge_id, module)
-            changed = True
+            esg_delete_response = delete_edge_service_gateway(client_session, edge_id)
+            module.exit_json(changed=True, esg_create_response=esg_create_response,
+                             esg_delete_response=esg_delete_response)
+        else:
+            module.exit_json(changed=False, esg_create_response=esg_create_response,
+                             esg_delete_response=esg_delete_response)
+
+    routes, current_dfgw = get_esg_routes(client_session, edge_id)
+    fw_state = get_firewall_state(client_session, edge_id)
+
+    if module.params['default_gateway']:
+        if current_dfgw != module.params['default_gateway']:
+            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'])
+    else:
+        if current_dfgw:
+            changed = config_def_gw(client_session, edge_id, None)
+
+    if module.params['firewall'] == 'false' and fw_state:
+        set_firewall(client_session, edge_id, False)
+        changed = True
+    elif module.params['firewall'] == 'true' and not fw_state:
+        set_firewall(client_session, edge_id, True)
+        changed = True
 
     if changed:
         module.exit_json(changed=True, esg_create_response=esg_create_response,

@@ -50,12 +50,18 @@
       edge_uplink_vnic_index: '0'
       edge_uplink_vnic_name: 'Uplink vnic'
       edge_uplink_portgroup_moid: "{{ gather_moids_upl_pg.object_id }}"
-      edge_uplink_vnic_ip: '10.10.10.2'
-      edge_uplink_vnic_subnet_prefix: '24'
+      edge_uplink_vnic_ip: '10.114.209.94'
+      edge_uplink_vnic_subnet_prefix: '27'
+      default_gateway: '10.114.209.65'
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+      firewall: 'false'
     register: create_esg
     tags: esg_create
 
   - debug: var=create_esg
+    tags: debug
 
   - name: ESG config
     nsx_edge_router_config:
@@ -68,6 +74,7 @@
     tags: esg_config
 
   - debug: var=config_esg
+    tags: debug
 
   - name: ESG Delete
     nsx_edge_router:

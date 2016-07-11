@@ -67,6 +67,10 @@ def create_dlr(client_session, module):
     dlr_create_dict['edge']['appliances']['appliance']['resourcePoolId'] = module.params['resourcepool_moid']
     dlr_create_dict['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
     dlr_create_dict['edge']['mgmtInterface'] = {'connectedToId': module.params['mgmt_portgroup_moid']}
+    if module.params['remote_access'] == 'true':
+        dlr_create_dict['edge']['cliSettings'] = {'password': module.params['password'],
+                                                  'remoteAccess': module.params['remote_access'],
+                                                  'userName': module.params['username']}
 
     # Get logical Switch ID for interface connection
     internal_switch_id = get_logical_switch(client_session, module.params['interface_int_logicalswitch_name'])
@@ -96,7 +100,12 @@ def create_dlr(client_session, module):
     del dlr_create_dict['edge']['appliances']['appliance']['hostId']
     del dlr_create_dict['edge']['appliances']['appliance']['customField']
 
-    return client_session.create('nsxEdges', request_body_dict=dlr_create_dict)
+    response = client_session.create('nsxEdges', request_body_dict=dlr_create_dict)
+
+    edge_id = response['objectId']
+    edge_params = response['body']
+
+    return edge_id, edge_params
 
 
 def configure_ha(session, edge_id):
@@ -106,6 +115,40 @@ def configure_ha(session, edge_id):
 
     return session.update('highAvailability', uri_parameters={'edgeId': edge_id},
                           request_body_dict=edge_ha_body)
+
+
+def get_dlr_routes(client_session, dlr_id):
+    rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': dlr_id})['body']
+    if rtg_cfg['staticRouting']['staticRoutes']:
+        routes = client_session.normalize_list_return(rtg_cfg['staticRouting']['staticRoutes']['route'])
+    else:
+        routes = []
+
+    dfgw_dict = rtg_cfg['staticRouting'].get('defaultRoute', '')
+    if dfgw_dict != '':
+        dfgw = dfgw_dict.get('gatewayAddress', '')
+    else:
+        dfgw = None
+
+    return routes, dfgw
+
+
+def config_def_gw(client_session, dlr_id, dfgw):
+    rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': dlr_id})['body']
+    if dfgw:
+        try:
+            rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
+        except KeyError:
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': '1', 'mtu': '1500'}
+    else:
+        rtg_cfg['staticRouting']['defaultRoute'] = None
+
+    cfg_result = client_session.update('routingConfigStatic', uri_parameters={'edgeId': dlr_id},
+                                       request_body_dict=rtg_cfg)
+    if cfg_result['status'] == 204:
+        return True
+    else:
+        return False
 
 
 def main():
@@ -127,6 +170,10 @@ def main():
             interface_uplink_logicalswitch_name=dict(required=True),
             interface_uplink_ip=dict(required=True),
             interface_uplink_subnet_mask=dict(required=True),
+            default_gateway=dict(),
+            username=dict(),
+            password=dict(),
+            remote_access=dict(default='false', choices=['true', 'false'])
         ),
         supports_check_mode=False
     )
@@ -137,22 +184,39 @@ def main():
                              module.params['nsxmanager_spec']['user'],
                              module.params['nsxmanager_spec']['password'])
 
+    if module.params['remote_access'] == 'true' and not (module.params['password'] and module.params['username']):
+        module.fail_json(msg='if remote access is enabled, username and password must be set')
+
     changed = False
     dlr_create_response = {}
     dlr_delete_response = {}
+    dlr_id = None
 
     if module.params['state'] == 'present':
         dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
         if not dlr_id:
-            dlr_create_response = create_dlr(client_session, module)
+            dlr_id, dlr_params = create_dlr(client_session, module)
             # Configure HA for deployed Logical Distributed Router
-            ha_response = configure_ha(client_session, dlr_create_response['objectId'])
+            ha_response = configure_ha(client_session, dlr_id)
             changed = True
     elif module.params['state'] == 'absent':
         dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
         if dlr_id:
             dlr_delete_response = delete_dlr(client_session, dlr_id, module)
-            changed = True
+            module.exit_json(changed=True, dlr_create_response=dlr_create_response,
+                             dlr_delete_response=dlr_delete_response)
+        else:
+            module.exit_json(changed=False, dlr_create_response=dlr_create_response,
+                             dlr_delete_response=dlr_delete_response)
+
+    routes, current_dfgw = get_dlr_routes(client_session, dlr_id)
+
+    if module.params['default_gateway']:
+        if current_dfgw != module.params['default_gateway']:
+            changed = config_def_gw(client_session, dlr_id, module.params['default_gateway'])
+    else:
+        if current_dfgw:
+            changed = config_def_gw(client_session, dlr_id, None)
 
     if changed:
         module.exit_json(changed=True, dlr_create_response=dlr_create_response,

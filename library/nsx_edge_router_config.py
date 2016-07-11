@@ -69,19 +69,6 @@ def get_vnic_index(session, edge_id, vnic_name):
 
     return vnic_index
 
-def disable_firewall(session, edge_id):
-    '''Disable firewall'''
-    disable_firewall_body = session.extract_resource_body_example('nsxEdgeFirewallConfig', 'update')
-    disable_firewall_body['firewall']['enabled']='false'
-
-    del disable_firewall_body['firewall']['defaultPolicy']
-    del disable_firewall_body['firewall']['globalConfig']
-    del disable_firewall_body['firewall']['rules']
-
-    return session.update('nsxEdgeFirewallConfig',
-                          uri_parameters={'edgeId': edge_id},
-                          request_body_dict=disable_firewall_body)
-
 
 def main():
     module = AnsibleModule(
@@ -103,7 +90,6 @@ def main():
 
     edge_id, edge_params = get_edge(client_session, module.params['esg_name'])
 
-    disable_firewall(client_session, edge_id)
     edge_response=config_routing(client_session, module, edge_id)
 
     module.exit_json(changed=True, edge_response=edge_response)

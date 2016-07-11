@@ -69,20 +69,6 @@ def get_ldr_id(session, ldr_name):
         return edge_id
 
 
-def disable_firewall(session, ldr_id):
-    '''Disable firewall'''
-    disable_firewall_body = session.extract_resource_body_example('nsxEdgeFirewallConfig', 'update')
-    disable_firewall_body['firewall']['enabled']='false'
-
-    del disable_firewall_body['firewall']['defaultPolicy']
-    del disable_firewall_body['firewall']['globalConfig']
-    del disable_firewall_body['firewall']['rules']
-
-    return session.update('nsxEdgeFirewallConfig',
-                          uri_parameters={'edgeId': ldr_id},
-                          request_body_dict=disable_firewall_body)
-
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
