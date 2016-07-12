@@ -53,7 +53,7 @@
       edge_uplink_vnic_ip: '10.114.209.94'
       edge_uplink_vnic_subnet_prefix: '27'
       default_gateway: '10.114.209.65'
-      remote_access: 'true'
+      #remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
       firewall: 'false'

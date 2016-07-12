@@ -52,7 +52,7 @@
       interface_uplink_ip: '192.168.178.2'
       interface_uplink_subnet_mask: '255.255.255.0'
       default_gateway: '192.168.178.1'
-      #remote_access: 'true'
+      remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
     register: create_dlr

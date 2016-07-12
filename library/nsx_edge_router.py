@@ -64,7 +64,7 @@ def create_edge_service_gateway(session, module):
     create_edge_body['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
     create_edge_body['edge']['appliances']['appliance']['customField']['key'] = 'system.service.vmware.vsla.main01'
     create_edge_body['edge']['appliances']['appliance']['customField']['value'] = 'string'
-    if module.params['remote_access'] == 'true':
+    if module.params['username'] and module.params['password']:
         create_edge_body['edge']['cliSettings'] = {'password': module.params['password'],
                                                    'remoteAccess': module.params['remote_access'],
                                                    'userName': module.params['username']}

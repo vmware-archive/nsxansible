@@ -67,7 +67,7 @@ def create_dlr(client_session, module):
     dlr_create_dict['edge']['appliances']['appliance']['resourcePoolId'] = module.params['resourcepool_moid']
     dlr_create_dict['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
     dlr_create_dict['edge']['mgmtInterface'] = {'connectedToId': module.params['mgmt_portgroup_moid']}
-    if module.params['remote_access'] == 'true':
+    if module.params['username'] and module.params['password']:
         dlr_create_dict['edge']['cliSettings'] = {'password': module.params['password'],
                                                   'remoteAccess': module.params['remote_access'],
                                                   'userName': module.params['username']}
