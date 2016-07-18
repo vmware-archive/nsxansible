@@ -108,10 +108,18 @@ def create_dlr(client_session, module):
     return edge_id, edge_params
 
 
-def configure_ha(session, edge_id):
+def check_ha_status(client_session, dlr_id):
+    edge_ha_status = client_session.read('highAvailability', uri_parameters={'edgeId': dlr_id})['body']
+    if edge_ha_status['highAvailability']['enabled'] == 'false':
+        return False
+    elif edge_ha_status['highAvailability']['enabled'] == 'true':
+        return True
+
+
+def configure_ha(session, edge_id, state, dead_time):
     edge_ha_body = session.extract_resource_body_example('highAvailability', 'update')
-    edge_ha_body['highAvailability']['declareDeadTime'] = 20
-    edge_ha_body['highAvailability']['enabled'] = 'true'
+    edge_ha_body['highAvailability']['declareDeadTime'] = dead_time
+    edge_ha_body['highAvailability']['enabled'] = state
 
     return session.update('highAvailability', uri_parameters={'edgeId': edge_id},
                           request_body_dict=edge_ha_body)
@@ -173,7 +181,9 @@ def main():
             default_gateway=dict(),
             username=dict(),
             password=dict(),
-            remote_access=dict(default='false', choices=['true', 'false'])
+            remote_access=dict(default='false', choices=['true', 'false']),
+            ha_enabled=dict(default='false', choices=['true', 'false']),
+            ha_deadtime=dict(default='15')
         ),
         supports_check_mode=False
     )
@@ -196,8 +206,6 @@ def main():
         dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
         if not dlr_id:
             dlr_id, dlr_params = create_dlr(client_session, module)
-            # Configure HA for deployed Logical Distributed Router
-            ha_response = configure_ha(client_session, dlr_id)
             changed = True
     elif module.params['state'] == 'absent':
         dlr_id, dlr_params = get_dlr(client_session, module.params['name'])
@@ -210,6 +218,14 @@ def main():
                              dlr_delete_response=dlr_delete_response)
 
     routes, current_dfgw = get_dlr_routes(client_session, dlr_id)
+    ha_state = check_ha_status(client_session, dlr_id)
+
+    if not ha_state and module.params['ha_enabled'] == 'true':
+        configure_ha(client_session, dlr_id, module.params['ha_enabled'], module.params['ha_deadtime'])
+        changed = True
+    elif ha_state and module.params['ha_enabled'] == 'false':
+        configure_ha(client_session, dlr_id, module.params['ha_enabled'], module.params['ha_deadtime'])
+        changed = True
 
     if module.params['default_gateway']:
         if current_dfgw != module.params['default_gateway']:

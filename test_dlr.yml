@@ -55,6 +55,7 @@
       remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
+      ha_enabled: 'true'
     register: create_dlr
     tags: dlr_create
 
