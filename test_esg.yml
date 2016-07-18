@@ -29,7 +29,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
-      portgroup_name: 'vlan41'
+      portgroup_name: 'vlan44'
     register: gather_moids_upl_pg
     tags: esg_create
 
@@ -42,18 +42,12 @@
       resourcepool_moid: "{{ gather_moids_cl.object_id }}"
       datastore_moid: "{{ gather_moids_ds.object_id }}"
       datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
-      edge_int_vnic_index: '1'
-      edge_int_vnic_name: 'Internal vnic'
-      edge_int_logicalswitch_name: 'edge_ls'
-      edge_int_vnic_ip: '192.168.178.1'
-      edge_int_vnic_subnet_prefix: '24'
-      edge_uplink_vnic_index: '0'
-      edge_uplink_vnic_name: 'Uplink vnic'
-      edge_uplink_portgroup_moid: "{{ gather_moids_upl_pg.object_id }}"
-      edge_uplink_vnic_ip: '10.114.209.94'
-      edge_uplink_vnic_subnet_prefix: '27'
+      interfaces:
+        vnic0: {ip: '10.114.209.91', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
+        vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'edge_ls', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
+        vnic5: {ip: '192.169.220.3', prefix_len: 24, logical_switch: 'new_lswitch_name', name: 'Internal vnic Nr 5', iftype: 'internal'}
       default_gateway: '10.114.209.65'
-      #remote_access: 'true'
+      remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
       firewall: 'false'
@@ -84,16 +78,7 @@
       resourcepool_moid: ''
       datastore_moid: ''
       datacenter_moid: ''
-      edge_int_vnic_index: ''
-      edge_int_vnic_name: ''
-      edge_int_logicalswitch_name: ''
-      edge_int_vnic_ip: ''
-      edge_int_vnic_subnet_prefix: ''
-      edge_uplink_vnic_index: ''
-      edge_uplink_vnic_name: ''
-      edge_uplink_portgroup_moid: ''
-      edge_uplink_vnic_ip: ''
-      edge_uplink_vnic_subnet_prefix: ''
+      interfaces: {}
     register: delete_esg
     tags: esg_delete
     

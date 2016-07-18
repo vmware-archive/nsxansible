@@ -53,8 +53,8 @@ def get_edge(client_session, edge_name):
     return edge_id, edge_params
 
 
-def create_edge_service_gateway(session, module):
-    create_edge_body = session.extract_resource_body_example('nsxEdges', 'create')
+def create_edge_service_gateway(client_session, module):
+    create_edge_body = client_session.extract_resource_body_example('nsxEdges', 'create')
 
     create_edge_body['edge']['name'] = module.params['name']
     create_edge_body['edge']['description'] = module.params['description']
@@ -69,36 +69,42 @@ def create_edge_service_gateway(session, module):
                                                    'remoteAccess': module.params['remote_access'],
                                                    'userName': module.params['username']}
 
-    internal_switch_id = get_logical_switch(session,  module.params['edge_int_logicalswitch_name'])
+    create_edge_body['edge']['vnics']['vnic'] = create_init_ifaces(client_session, module)
 
-    vnics_info = [{'name': module.params['edge_int_vnic_name'],
-                            'index': module.params['edge_int_vnic_index'],
-                            'isConnected': 'true',
-                            'type': 'internal',
-                            'portgroupId': internal_switch_id,
-                            'fenceParameter':{'key': 'ethernet0.filter1.param1','value': 1},
-                            'addressGroups': {'addressGroup': {'primaryAddress': module.params['edge_int_vnic_ip'],
-                                                               'subnetPrefixLength':
-                                                                   module.params['edge_int_vnic_subnet_prefix']}}},
-                  {'name': module.params['edge_uplink_vnic_name'],
-                            'index': module.params['edge_uplink_vnic_index'],
-                            'isConnected': 'true',
-                            'type': 'uplink',
-                            'portgroupId': module.params['edge_uplink_portgroup_moid'],
-                            'fenceParameter':{'key': 'ethernet0.filter1.param1','value': 1},
-                            'addressGroups': {'addressGroup': 
-                                    {'primaryAddress': module.params['edge_uplink_vnic_ip'],
-                                     'subnetPrefixLength': module.params['edge_uplink_vnic_subnet_prefix']}},
-                                     },]
-
-    create_edge_body['edge']['vnics']['vnic'] = vnics_info
-
-    response = session.create('nsxEdges', request_body_dict=create_edge_body)
+    response = client_session.create('nsxEdges', request_body_dict=create_edge_body)
     edge_id = response['objectId']
     edge_params = response['body']
 
     return edge_id, edge_params
 
+
+def create_init_ifaces(client_session, module):
+    ifaces = module.params['interfaces']
+    params_check_ifaces(module)
+    vnics_info = []
+
+    for iface_key, iface in ifaces.items():
+        iface_index = iface_key[-1:]
+        portgroup_id = None
+        if 'portgroup_id' in iface:
+            portgroup_id = iface['portgroup_id']
+        elif 'logical_switch' in iface:
+            lswitch_id = get_logical_switch(client_session, iface['logical_switch'])
+            portgroup_id = lswitch_id
+
+        fence_param = None
+        if 'fence_param' in iface:
+            fence_key, fence_val = iface['fence_param'].split('=')
+            fence_param = {'key': fence_key,'value': fence_val}
+
+        vnics_info.append({'name': iface['name'], 'index': iface_index, 'isConnected': 'true', 'type': iface['iftype'],
+                           'portgroupId': portgroup_id, 'fenceParameter': fence_param,
+                           'addressGroups': {'addressGroup': {'primaryAddress': iface['ip'],
+                                                              'subnetPrefixLength': iface['prefix_len']}
+                                             }
+                           })
+
+    return vnics_info
 
 def delete_edge_service_gateway(client_session, esg_id):
     response = client_session.delete('nsxEdge', uri_parameters={'edgeId': esg_id})
@@ -161,6 +167,122 @@ def set_firewall(client_session, esg_id, state):
                                  request_body_dict=firewall_body)
 
 
+def params_check_ifaces(module):
+    ifaces = module.params['interfaces']
+    if not isinstance(ifaces, dict):
+        module.fail_json(msg='Malformed Interfaces Dictionary: The Interfaces Information is not a dictionary')
+    for iface_key, iface in ifaces.items():
+        if not isinstance(iface, dict):
+            module.fail_json(msg='Malformed Interface Dictionary: '
+                                 'The Interface {} Information is not a dictionary'.format(iface_key))
+        ip = iface.get('ip', None)
+        pfx_len = iface.get('prefix_len', None)
+        if_type = iface.get('iftype', None)
+        lswitch = iface.get('logical_switch', None)
+        portgroupid = iface.get('portgroup_id', None)
+        if not (ip and pfx_len and if_type):
+            module.fail_json(msg='You are missing one of the following parameter '
+                                 'in the Interface Dict: ip or pfx_len or if_type')
+        if not (lswitch or portgroupid):
+            module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
+                                 'parameters on {}'.format(iface_key))
+        if (lswitch and portgroupid):
+            module.fail_json(msg='Interface can either have: logical_switch or portgroup_id as parameters, '
+                                 'but not both on {}'.format(iface_key))
+
+
+def check_interfaces(client_session, esg_id, module):
+    changed = None
+    vnics = client_session.read('vnics', uri_parameters={'edgeId': esg_id})['body']
+    ifaces = module.params['interfaces']
+
+    params_check_ifaces(module)
+
+    for vnic in vnics['vnics']['vnic']:
+        vnic_deletion = None
+        idx = 'vnic{}'.format(vnic['index'])
+
+        if idx in ifaces:
+            continue
+        if 'portgroupId' in vnic:
+            vnic_deletion = True
+        if 'fence_param' in vnic:
+            vnic_deletion = True
+        if vnic['addressGroups']:
+            vnic_deletion = True
+        if vnic['name'] != idx:
+            vnic_deletion = True
+
+        if vnic_deletion:
+            client_session.delete('vnic', uri_parameters={'edgeId': esg_id, 'index': vnic['index']})
+            changed = True
+
+    for vnic in vnics['vnics']['vnic']:
+        vnic_changed = None
+        idx = 'vnic{}'.format(vnic['index'])
+
+        if idx not in ifaces:
+            continue
+
+        if vnic['name'] != ifaces[idx]['name']:
+            vnic['name'] = ifaces[idx]['name']
+            vnic_changed = True
+
+        if vnic['type'] != ifaces[idx]['iftype']:
+            vnic['type'] = ifaces[idx]['iftype']
+            vnic_changed = True
+
+        if 'portgroup_id' in ifaces[idx]:
+            if not 'portgroupId' in vnic:
+                vnic['portgroupId'] = ifaces[idx]['portgroup_id']
+                vnic_changed = True
+            else:
+                if vnic['portgroupId'] != ifaces[idx]['portgroup_id']:
+                    vnic['portgroupId'] = ifaces[idx]['portgroup_id']
+                    vnic_changed = True
+        elif 'logical_switch' in ifaces[idx]:
+            lswitch_id = get_logical_switch(client_session, ifaces[idx]['logical_switch'])
+            if not 'portgroupId' in vnic:
+                vnic['portgroupId'] = lswitch_id
+                vnic_changed = True
+            else:
+                if vnic['portgroupId'] != lswitch_id:
+                    vnic['portgroupId'] = lswitch_id
+                    vnic_changed = True
+
+        if 'fence_param' in ifaces[idx]:
+            fence_key, fence_val = ifaces[idx]['fence_param'].split('=')
+            if not 'fenceParameter' in vnic:
+                vnic['fenceParameter'] = {'key': fence_key,'value': fence_val}
+                vnic_changed = True
+            else:
+                if vnic['fenceParameter']['key'] != fence_key or vnic['fenceParameter']['value'] != fence_val:
+                    vnic['fenceParameter'] = {'key': fence_key,'value': fence_val}
+                    vnic_changed = True
+
+        if not vnic['addressGroups']:
+            vnic['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                     'subnetPrefixLength': ifaces[idx]['prefix_len']}}
+            vnic_changed = True
+        else:
+            if vnic['addressGroups']['addressGroup']['primaryAddress'] != ifaces[idx]['ip']:
+                vnic['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                                          'subnetPrefixLength': str(ifaces[idx]['prefix_len'])}}
+                vnic_changed = True
+            elif vnic['addressGroups']['addressGroup']['subnetPrefixLength'] != str(ifaces[idx]['prefix_len']):
+                vnic['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                                          'subnetPrefixLength': str(ifaces[idx]['prefix_len'])}}
+                vnic_changed = True
+
+        if vnic_changed:
+            vnic['isConnected'] = 'true'
+            client_session.update('vnic', uri_parameters={'edgeId': esg_id, 'index': vnic['index']},
+                                  request_body_dict={'vnic': vnic})
+            changed = True
+
+    return changed
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -171,16 +293,7 @@ def main():
             resourcepool_moid=dict(required=True),
             datastore_moid=dict(required=True),
             datacenter_moid=dict(required=True),
-            edge_int_vnic_index=dict(required=True),
-            edge_int_vnic_name=dict(required=True),
-            edge_int_logicalswitch_name=dict(required=True),
-            edge_int_vnic_ip=dict(required=True),
-            edge_int_vnic_subnet_prefix=dict(required=True),
-            edge_uplink_vnic_index=dict(required=True),
-            edge_uplink_vnic_name=dict(required=True),
-            edge_uplink_portgroup_moid=dict(required=True),
-            edge_uplink_vnic_ip=dict(required=True),
-            edge_uplink_vnic_subnet_prefix=dict(required=True),
+            interfaces=dict(required=True, type='dict'),
             default_gateway=dict(),
             username=dict(),
             password=dict(),
@@ -201,15 +314,13 @@ def main():
     changed = False
     esg_create_response = {}
     esg_delete_response = {}
-    edge_id = None
+    edge_id, edge_params = get_edge(client_session, module.params['name'])
 
     if module.params['state'] == 'present':
-        edge_id, edge_params = get_edge(client_session, module.params['name'])
         if not edge_id:
             edge_id, edge_params = create_edge_service_gateway(client_session, module)
             changed = True
     elif module.params['state'] == 'absent':
-        edge_id, edge_params = get_edge(client_session, module.params['name'])
         if edge_id:
             esg_delete_response = delete_edge_service_gateway(client_session, edge_id)
             module.exit_json(changed=True, esg_create_response=esg_create_response,
@@ -220,6 +331,11 @@ def main():
 
     routes, current_dfgw = get_esg_routes(client_session, edge_id)
     fw_state = get_firewall_state(client_session, edge_id)
+
+    ifaces_changed = check_interfaces(client_session, edge_id, module)
+
+    if ifaces_changed:
+        changed = True
 
     if module.params['default_gateway']:
         if current_dfgw != module.params['default_gateway']:
@@ -236,11 +352,9 @@ def main():
         changed = True
 
     if changed:
-        module.exit_json(changed=True, esg_create_response=esg_create_response,
-                         esg_delete_response=esg_delete_response)
+        module.exit_json(changed=True)
     else:
-        module.exit_json(changed=False, esg_create_response=esg_create_response,
-                         esg_delete_response=esg_delete_response)
+        module.exit_json(changed=False)
 
 
 from ansible.module_utils.basic import *
