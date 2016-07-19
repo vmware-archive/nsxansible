@@ -58,6 +58,9 @@ def delete_dlr(client_session, dlr_id, module):
 
 
 def create_dlr(client_session, module):
+    params_check_ifaces(module)
+    ifaces = construct_ifaces_dict(module.params['interfaces'])
+
     dlr_create_dict = client_session.extract_resource_body_example('nsxEdges', 'create')
 
     dlr_create_dict['edge']['name'] = module.params['name']
@@ -71,30 +74,22 @@ def create_dlr(client_session, module):
         dlr_create_dict['edge']['cliSettings'] = {'password': module.params['password'],
                                                   'remoteAccess': module.params['remote_access'],
                                                   'userName': module.params['username']}
+    initial_intf = []
+    for iface_key, iface in ifaces.items():
+        connected_to = None
+        if 'portgroup_id' in iface:
+            connected_to = iface['portgroup_id']
+        elif 'logical_switch' in iface:
+            lswitch_id = get_logical_switch(client_session, iface['logical_switch'])
+            connected_to = lswitch_id
+        initial_intf.append({'name': iface_key, 'type': iface['iftype'], 'isConnected': "True",
+                             'connectedToId': connected_to,
+                             'addressGroups': {'addressGroup': {'primaryAddress': iface['ip'],
+                                                                'subnetPrefixLength': iface['prefix_len']}
+                                               }
+                             })
 
-    # Get logical Switch ID for interface connection
-    internal_switch_id = get_logical_switch(client_session, module.params['interface_int_logicalswitch_name'])
-    uplink_switch_id = get_logical_switch(client_session, module.params['interface_uplink_logicalswitch_name'])
-
-    interfaces=[{'name': module.params['uplink_interface_name'],
-                             'type': 'uplink',
-                             'isConnected': "True",
-                             'connectedToId': uplink_switch_id, # second switch connected to uplink
-                             'addressGroups': {'addressGroup': 
-                                              {'primaryAddress': module.params['interface_uplink_ip'],
-                                                'subnetMask': module.params['interface_uplink_subnet_mask']
-                                               }}},
-               {'name': module.params['internal_interface_name'],
-                 'type': 'internal',
-                 'isConnected': "True",
-                 'connectedToId': internal_switch_id, # first switch connected to internal
-                 'addressGroups': {'addressGroup': 
-                                  {'primaryAddress': module.params['interface_int_ip'],
-                                    'subnetMask': module.params['interface_int_subnet_mask']
-                                   }}
-                }]
-
-    dlr_create_dict['edge']['interfaces'] = {'interface': interfaces}
+    dlr_create_dict['edge']['interfaces'] = {'interface': initial_intf}
 
     del dlr_create_dict['edge']['vnics']
     del dlr_create_dict['edge']['appliances']['appliance']['hostId']
@@ -159,6 +154,146 @@ def config_def_gw(client_session, dlr_id, dfgw):
         return False
 
 
+def params_check_ifaces(module):
+    ifaces = module.params['interfaces']
+    if not isinstance(ifaces, list):
+        module.fail_json(msg='Malformed Interfaces List: The Interfaces Information is not a list')
+    for iface in ifaces:
+        if not isinstance(iface, dict):
+            module.fail_json(msg='Malformed Interface Dictionary: '
+                                 'The Interface Information is not a dictionary: {}'.format(iface))
+        ip = iface.get('ip', None)
+        pfx_len = iface.get('prefix_len', None)
+        if_type = iface.get('iftype', None)
+        lswitch = iface.get('logical_switch', None)
+        portgroupid = iface.get('portgroup_id', None)
+        name = iface.get('name', None)
+        if not (ip and pfx_len and if_type and name):
+            module.fail_json(msg='You are missing one of the following parameter '
+                                 'in the Interface Dict: ip {} or prefix_len {} or '
+                                 'iftype {} or name {}'.format(ip, pfx_len, if_type, name))
+        if not (lswitch or portgroupid):
+            module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
+                                 'parameters on {}'.format(iface['name']))
+        if (lswitch and portgroupid):
+            module.fail_json(msg='Interface can either have: logical_switch or portgroup_id as parameters, '
+                                 'but not both on {}'.format(iface['name']))
+
+
+def construct_ifaces_dict(iface_list):
+    iface_dict = {}
+    for iface in iface_list:
+        iface_dict[iface['name']] = iface
+    return iface_dict
+
+
+def check_interfaces(client_session, dlr_id, module):
+    changed = None
+    params_check_ifaces(module)
+
+    intfs_api = client_session.read('interfaces', uri_parameters={'edgeId': dlr_id})['body']
+
+    if intfs_api['interfaces']:
+        intfs = client_session.normalize_list_return(intfs_api['interfaces']['interface'])
+    else:
+        intfs = []
+
+    intfs_namelist = []
+    for intf in intfs:
+        intfs_namelist.append(intf['name'])
+
+    ifaces = construct_ifaces_dict(module.params['interfaces'])
+
+    for intf in intfs:
+        intf_deletion = None
+        idx = intf['name']
+        ifindex = intf['index']
+        if idx in ifaces.keys():
+            continue
+        if 'connectedToId' in intf:
+            intf_deletion = True
+        if intf['addressGroups']:
+            intf_deletion = True
+        if intf['name'] != idx:
+            intf_deletion = True
+
+        if intf_deletion:
+            client_session.delete('interface', uri_parameters={'edgeId': dlr_id, 'index': ifindex})
+            changed = True
+
+    for intf in intfs:
+        intf_changed = None
+        idx = intf['name']
+        ifindex = intf['index']
+        if idx not in ifaces.keys():
+            continue
+
+        if intf['type'] != ifaces[idx]['iftype']:
+            intf['type'] = ifaces[idx]['iftype']
+            intf_changed = True
+
+        if 'portgroup_id' in ifaces[idx]:
+            if not 'connectedToId' in intf:
+                intf['connectedToId'] = ifaces[idx]['portgroup_id']
+                intf_changed = True
+            else:
+                if intf['connectedToId'] != ifaces[idx]['portgroup_id']:
+                    intf['connectedToId'] = ifaces[idx]['portgroup_id']
+                    intf_changed = True
+        elif 'logical_switch' in ifaces[idx]:
+            lswitch_id = get_logical_switch(client_session, ifaces[idx]['logical_switch'])
+            if not 'connectedToId' in intf:
+                intf['connectedToId'] = lswitch_id
+                intf_changed = True
+            else:
+                if intf['connectedToId'] != lswitch_id:
+                    intf['connectedToId'] = lswitch_id
+                    intf_changed = True
+
+        if not intf['addressGroups']:
+            intf['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                     'subnetPrefixLength': ifaces[idx]['prefix_len']}}
+            intf_changed = True
+        else:
+            if intf['addressGroups']['addressGroup']['primaryAddress'] != ifaces[idx]['ip']:
+                intf['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                                          'subnetPrefixLength': str(ifaces[idx]['prefix_len'])}}
+                intf_changed = True
+            elif intf['addressGroups']['addressGroup']['subnetPrefixLength'] != str(ifaces[idx]['prefix_len']):
+                intf['addressGroups'] = {'addressGroup': {'primaryAddress': ifaces[idx]['ip'],
+                                                          'subnetPrefixLength': str(ifaces[idx]['prefix_len'])}}
+                intf_changed = True
+
+        if intf_changed:
+            intf['isConnected'] = 'true'
+            intfs_update =  {'interface': intf}
+            client_session.update('interface', uri_parameters={'edgeId': dlr_id, 'index': ifindex},
+                                  request_body_dict=intfs_update)
+            changed = True
+
+    for iface_key, iface in ifaces.items():
+        if iface_key not in intfs_namelist:
+            connected_to = None
+            if 'portgroup_id' in iface:
+                connected_to = iface['portgroup_id']
+            elif 'logical_switch' in iface:
+                lswitch_id = get_logical_switch(client_session, iface['logical_switch'])
+                connected_to = lswitch_id
+            add_if = {'name': iface_key, 'type': iface['iftype'], 'isConnected': "True",
+                      'connectedToId': connected_to,
+                      'addressGroups': {'addressGroup': {'primaryAddress': iface['ip'],
+                                                         'subnetPrefixLength': iface['prefix_len']}
+                                        }
+                      }
+            client_session.create('interfaces', uri_parameters={'edgeId': dlr_id},
+                                  query_parameters_dict={'action': 'patch'},
+                                  request_body_dict={'interfaces': {'interface': add_if }}
+                                  )
+            changed = True
+
+    return changed
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -170,14 +305,7 @@ def main():
             datastore_moid=dict(required=True),
             mgmt_portgroup_moid=dict(required=True),
             datacenter_moid=dict(required=True),
-            internal_interface_name=dict(required=True),
-            interface_int_logicalswitch_name=dict(required=True),
-            interface_int_ip=dict(required=True),
-            interface_int_subnet_mask=dict(required=True),
-            uplink_interface_name=dict(required=True),
-            interface_uplink_logicalswitch_name=dict(required=True),
-            interface_uplink_ip=dict(required=True),
-            interface_uplink_subnet_mask=dict(required=True),
+            interfaces=dict(required=True, type='list'),
             default_gateway=dict(),
             username=dict(),
             password=dict(),
@@ -225,6 +353,11 @@ def main():
         changed = True
     elif ha_state and module.params['ha_enabled'] == 'false':
         configure_ha(client_session, dlr_id, module.params['ha_enabled'], module.params['ha_deadtime'])
+        changed = True
+
+    ifaces_changed = check_interfaces(client_session, dlr_id, module)
+
+    if ifaces_changed:
         changed = True
 
     if module.params['default_gateway']:

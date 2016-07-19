@@ -29,7 +29,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
-      portgroup_name: 'vlan41'
+      portgroup_name: 'vlan45'
     register: gather_moids_pg
     tags: dlr_create
 
@@ -43,14 +43,10 @@
       datastore_moid: "{{ gather_moids_ds.object_id }}"
       datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
       mgmt_portgroup_moid: "{{ gather_moids_pg.object_id }}"
-      internal_interface_name: 'Internal iface'
-      interface_int_logicalswitch_name: 'edge_ls'
-      interface_int_ip: '172.16.1.1'
-      interface_int_subnet_mask: '255.255.255.0'
-      uplink_interface_name: 'Uplink vnic'
-      interface_uplink_logicalswitch_name: 'dlr_ls'
-      interface_uplink_ip: '192.168.178.2'
-      interface_uplink_subnet_mask: '255.255.255.0'
+      interfaces:
+        - {name: 'Uplink vnic', ip: '192.168.178.2', prefix_len: 24, logical_switch: 'edge_ls', iftype: 'uplink'}
+        - {name: 'Internal iface', ip: '172.16.1.1', prefix_len: 24, portgroup_id: "{{ gather_moids_pg.object_id }}", iftype: 'uplink'}
+        - {name: 'Internal new', ip: '172.16.4.1', prefix_len: 26, logical_switch: 'new_lswitch_name', iftype: 'internal'}
       default_gateway: '192.168.178.1'
       remote_access: 'true'
       username: 'admin'
@@ -85,14 +81,7 @@
       datastore_moid: ''
       datacenter_moid: ''
       mgmt_portgroup_moid: ''
-      internal_interface_name: ''
-      interface_int_logicalswitch_name: ''
-      interface_int_ip: ''
-      interface_int_subnet_mask: ''
-      uplink_interface_name: ''
-      interface_uplink_logicalswitch_name: ''
-      interface_uplink_ip: ''
-      interface_uplink_subnet_mask: ''
+      interfaces: []
     register: delete_dlr
     tags: dlr_delete
     
