@@ -47,6 +47,11 @@
         - {name: 'Uplink vnic', ip: '192.168.178.2', prefix_len: 24, logical_switch: 'edge_ls', iftype: 'uplink'}
         - {name: 'Internal iface', ip: '172.16.1.1', prefix_len: 24, portgroup_id: "{{ gather_moids_pg.object_id }}", iftype: 'uplink'}
         - {name: 'Internal new', ip: '172.16.4.1', prefix_len: 26, logical_switch: 'new_lswitch_name', iftype: 'internal'}
+      routes:
+        - {network: '10.11.22.0/24', next_hop: '172.16.1.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+        #- {network: '10.11.23.0/24', next_hop: '172.16.1.2', mtu: '1600'}
+        - {network: '10.11.24.0/24', next_hop: '172.16.4.2'}
+        - {network: '10.11.25.0/24', next_hop: '172.16.4.2'}
       default_gateway: '192.168.178.1'
       remote_access: 'true'
       username: 'admin'

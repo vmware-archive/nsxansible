@@ -283,6 +283,68 @@ def check_interfaces(client_session, esg_id, module):
     return changed
 
 
+def params_check_routes(module):
+    routes = module.params['routes']
+    if not isinstance(routes, list):
+        module.fail_json(msg='Malformed Routes List: The routes Information is not a list')
+    for route in routes:
+        if not isinstance(route, dict):
+            module.fail_json(msg='Malformed Interface Dictionary: '
+                                 'The Interface {} Information is not a dictionary'.format(route))
+        network = route.get('network', None)
+        next_hop = route.get('next_hop', None)
+
+        if not (network and next_hop):
+            module.fail_json(msg='You are missing one of the following parameter '
+                                 'in the routes Dict: network or next_hop')
+
+
+def check_routes(client_session, esg_id, current_routes, module):
+    changed = None
+    params_check_routes(module)
+
+    new_routes = []
+    for route in current_routes:
+        for route_desired in module.params['routes']:
+            if route_desired['network'] == route['network'] and route_desired['next_hop'] == route['nextHop']:
+                admin_distance = route_desired.get('admin_distance', '1')
+                mtu = route_desired.get('mtu', '1500')
+                description = route_desired.get('description')
+
+                if admin_distance != route.get('adminDistance'):
+                    route['adminDistance'] = admin_distance
+                    changed = True
+                if mtu != route.get('mtu'):
+                    route['mtu'] = mtu
+                    changed = True
+                if description != route.get('description'):
+                    route['description'] = description
+                    changed = True
+                new_routes.append(route)
+                break
+        else:
+            changed = True
+
+    for route_desired in module.params['routes']:
+        for route in current_routes:
+            if route_desired['network'] == route['network'] and route_desired['next_hop'] == route['nextHop']:
+                break
+        else:
+            admin_distance = route_desired.get('admin_distance', '1')
+            mtu = route_desired.get('mtu', '1500')
+            description = route_desired.get('description')
+            new_routes.append({'network': route_desired['network'], 'nextHop': route_desired['next_hop'],
+                               'adminDistance': admin_distance, 'mtu': mtu, 'description': description})
+            changed = True
+
+    if changed:
+        rtg_config = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']
+        rtg_config['staticRouting']['staticRoutes'] = {'route': new_routes}
+        client_session.update('routingConfigStatic', uri_parameters={'edgeId': esg_id}, request_body_dict=rtg_config)
+
+    return changed
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -295,6 +357,7 @@ def main():
             datacenter_moid=dict(required=True),
             interfaces=dict(required=True, type='dict'),
             default_gateway=dict(),
+            routes=dict(default=[], type='list'),
             username=dict(),
             password=dict(),
             remote_access=dict(default='false', choices=['true', 'false']),
@@ -331,10 +394,12 @@ def main():
 
     routes, current_dfgw = get_esg_routes(client_session, edge_id)
     fw_state = get_firewall_state(client_session, edge_id)
-
     ifaces_changed = check_interfaces(client_session, edge_id, module)
+    routes_changed = check_routes(client_session, edge_id, routes, module)
 
     if ifaces_changed:
+        changed = True
+    if routes_changed:
         changed = True
 
     if module.params['default_gateway']:

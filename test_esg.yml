@@ -45,8 +45,13 @@
       interfaces:
         vnic0: {ip: '10.114.209.91', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
         vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'edge_ls', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
-        vnic5: {ip: '192.169.220.3', prefix_len: 24, logical_switch: 'new_lswitch_name', name: 'Internal vnic Nr 5', iftype: 'internal'}
+        vnic5: {ip: '192.168.179.3', prefix_len: 24, logical_switch: 'new_lswitch_name', name: 'Internal vnic Nr 5', iftype: 'internal'}
       default_gateway: '10.114.209.65'
+      routes:
+        - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+        - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
+        - {network: '10.11.14.0/24', next_hop: '192.168.179.2'}
+        - {network: '10.11.15.0/24', next_hop: '192.168.179.2'}
       remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
