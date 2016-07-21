@@ -29,7 +29,7 @@
       username: "{{ vcenter_user }}"
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
-      portgroup_name: 'vlan44'
+      portgroup_name: 'vlan41'
     register: gather_moids_upl_pg
     tags: esg_create
 
@@ -43,7 +43,7 @@
       datastore_moid: "{{ gather_moids_ds.object_id }}"
       datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
       interfaces:
-        vnic0: {ip: '10.114.209.91', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
+        vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
         vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'edge_ls', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
         vnic5: {ip: '192.168.179.3', prefix_len: 24, logical_switch: 'new_lswitch_name', name: 'Internal vnic Nr 5', iftype: 'internal'}
       default_gateway: '10.114.209.65'

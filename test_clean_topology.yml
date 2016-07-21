@@ -1,0 +1,57 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars:
+    dlr_networks:
+      app1: {name: 'App1-Net', ip: '172.16.10.1', network: '172.16.10.0/24', prefix_len: 24, logical_switch: 'app1', iftype: 'internal'}
+      app2: {name: 'App2-Net', ip: '172.16.11.1', network: '172.16.11.0/24', prefix_len: 24, logical_switch: 'app2', iftype: 'internal'}
+      db1: {name: 'Db1-Net', ip: '172.16.12.1', network: '172.16.12.0/24', prefix_len: 24, logical_switch: 'db1', iftype: 'internal'}
+      web1: {name: 'Web1-Net', ip: '172.16.13.1', network: '172.16.13.0/24', prefix_len: 24, logical_switch: 'web1', iftype: 'internal'}
+      web2: {name: 'Web2-Net', ip: '172.16.14.1', network: '172.16.14.0/24', prefix_len: 24, logical_switch: 'web2', iftype: 'internal'}
+      web3: {name: 'Web3-Net', ip: '172.16.15.1', network: '172.16.15.0/24', prefix_len: 24, logical_switch: 'web3', iftype: 'internal'}
+      transit_net: {name: 'transit_net', ip: '172.16.1.2', prefix_len: 24, logical_switch: 'transit_net', iftype: 'uplink'}
+    esg_networks:
+      uplink: {name: 'uplink', ip: '10.114.209.91', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", iftype: 'uplink'}
+      transit_net: {name: 'transit_net', ip: '172.16.1.1', prefix_len: 24, logical_switch: 'transit_net', iftype: 'internal'}
+  vars_files:
+    - answerfile_TPM_Lab.yml
+  tasks:
+  
+  - name: DLR Delete
+    nsx_dlr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      name: 'ansibleDLR'
+      resourcepool_moid: ''
+      datastore_moid: ''
+      datacenter_moid: ''
+      mgmt_portgroup_moid: ''
+      interfaces: []
+    register: delete_dlr
+    tags: dlr_delete
+
+  - name: ESG Delete
+    nsx_edge_router:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      name: 'ansibleESG'
+      resourcepool_moid: ''
+      datastore_moid: ''
+      datacenter_moid: ''
+      interfaces: {}
+    register: delete_esg
+    tags: esg_delete
+
+  - name: delete logical switches
+    nsx_logical_switch:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      transportzone: "TZ1"
+      name: "{{ item.key }}"
+      controlplanemode: "HYBRID_MODE"
+      description: "{{ item.value.name }}"
+    with_dict: "{{ dlr_networks }}"
+    register: logical_switch
+    tags: lswitch_delete
+  
