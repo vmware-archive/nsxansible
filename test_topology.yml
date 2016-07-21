@@ -3,7 +3,6 @@
   connection: local
   gather_facts: False
   vars:
-    payload_networks:
     dlr_networks:
       app1: {name: 'App1-Net', ip: '172.16.10.1', network: '172.16.10.0/24', prefix_len: 24, logical_switch: 'app1', iftype: 'internal'}
       app2: {name: 'App2-Net', ip: '172.16.11.1', network: '172.16.11.0/24', prefix_len: 24, logical_switch: 'app2', iftype: 'internal'}
