@@ -60,6 +60,7 @@ def create_edge_service_gateway(client_session, module):
     create_edge_body['edge']['description'] = module.params['description']
     create_edge_body['edge']['type'] = 'gatewayServices'
     create_edge_body['edge']['datacenterMoid'] = module.params['datacenter_moid']
+    create_edge_body['edge']['appliances']['applianceSize'] = module.params['appliance_size']
     create_edge_body['edge']['appliances']['appliance']['resourcePoolId'] = module.params['resourcepool_moid']
     create_edge_body['edge']['appliances']['appliance']['datastoreId'] = module.params['datastore_moid']
     create_edge_body['edge']['appliances']['appliance']['customField']['key'] = 'system.service.vmware.vsla.main01'
@@ -352,6 +353,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
             description=dict(),
+            appliance_size=dict(default='Large', choices=['Compact', 'Large', 'X-Large', 'Quad Large']),
             resourcepool_moid=dict(required=True),
             datastore_moid=dict(required=True),
             datacenter_moid=dict(required=True),
