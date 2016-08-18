@@ -1,0 +1,22 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: Configure OSPF
+    nsx_ospf:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      edge_name: 'ansibleESG'
+      router_id: '10.114.209.94'
+      # default_originate: True
+      # graceful_restart: False
+      areas: 
+        - { area_id: 59 }
+        - { area_id: 61, type: 'normal' }
+        # - { area_id: 62, type: 'nssa', authentication: 'password', password: 'mysecret' }
+    register: ospf
+    tags: ospf
+
