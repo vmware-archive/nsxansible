@@ -29,16 +29,19 @@ def retrieve_scope(session, tz_name):
 
 
 def get_lswitch_id(session, lswitchname, scope):
-    tz_lswitches=session.read('logicalSwitches', uri_parameters={'scopeId': scope})['body']
+    tz_lswitches=session.read_all_pages('logicalSwitchesGlobal', uri_parameters={'scopeId': scope})
     try:
-        first_page=tz_lswitches['virtualWires']['dataPage']['virtualWire']
+        vwires_all=tz_lswitches#['virtualWires']['dataPage']['virtualWire']
     except KeyError:
         return []
-    if isinstance(first_page, dict) and lswitchname in first_page['name']:
-        return [first_page['objectId']]
-    elif isinstance(first_page, list):
-        return [lswitch['objectId'] for lswitch in first_page if lswitchname in lswitch['name']]
+    if isinstance(vwires_all, dict) and lswitchname in first_page['name']:
+        return [vwires_all['objectId']]
+    elif isinstance(vwires_all, list):
+        for lswitch_dict in vwires_all:
+            if lswitchname == lswitch_dict['name']:
+                return [lswitch_dict['objectId']]
     return []
+
 
 
 def get_lswitch_details(session, lswitch_id):
