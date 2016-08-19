@@ -5,7 +5,7 @@
   vars_files:
      - answerfile_TPM_Lab.yml
   tasks:
-  - name: Configure OSPF
+  - name: Configure OSPF ESG
     nsx_ospf:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
@@ -14,9 +14,33 @@
       # default_originate: True
       # graceful_restart: False
       areas: 
-        - { area_id: 59 }
-        - { area_id: 61, type: 'normal' }
+        - { area_id: 0 }
+        - { area_id: 61 }
+        - { area_id: 59, type: 'nssa' }
         # - { area_id: 62, type: 'nssa', authentication: 'password', password: 'mysecret' }
-    register: ospf
-    tags: ospf
+      area_map:
+        - { area_id: 0, vnic: 0, hello: 20}
+        - { area_id: 61, vnic: 1, ignore_mtu: True , hello: 15, dead: 60, priority: 128, cost: 1}
+        # - { area_id: 59, vnic: 2, dead: 33, priority: 155}
+    register: ospf_esg
+    tags: ospf_esg
+
+  - name: Configure OSPF DLR
+    nsx_ospf:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      edge_name: 'ansibleDLR'
+      router_id: '172.16.1.3'
+      forwarding_address: '172.16.1.2'
+      protocol_address: '172.16.1.3'
+      # default_originate: True
+      # graceful_restart: False
+      areas: 
+        - { area_id: 61 }
+      area_map:
+        - { area_id: 61, vnic: 2, ignore_mtu: False , hello: 15, dead: 60, priority: 128, cost: 1}      
+    register: ospf_dlr
+    tags: ospf_dlr
+
+
 

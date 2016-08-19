@@ -61,7 +61,8 @@ def set_ospf_state(current_config):
 
 
 def check_router_id(current_config, router_id):
-    current_router_id = current_config['routing']['routingGlobalConfig']['routerId']
+    current_routing_cfg = current_config['routing']['routingGlobalConfig']
+    current_router_id = current_routing_cfg.get('routerId', None)
     if current_router_id == router_id:
         return False, current_config
     else:
@@ -69,7 +70,7 @@ def check_router_id(current_config, router_id):
         return True, current_config
 
 
-def check_ospf_options(current_config, graceful_restart, default_originate):
+def check_ospf_options(current_config, graceful_restart, default_originate, forwarding_address, protocol_address):
     changed = False
     current_ospf = current_config['routing']['ospf']
     c_grst_str = current_ospf.get('gracefulRestart', 'false')
@@ -99,16 +100,29 @@ def check_ospf_options(current_config, graceful_restart, default_originate):
         current_config['routing']['ospf']['defaultOriginate'] = 'false'
         changed = True
 
+    c_prot_addr = current_ospf.get('protocolAddress')
+    c_forwarding_addr = current_ospf.get('forwardingAddress')
+
+    if c_forwarding_addr != forwarding_address:
+        current_config['routing']['ospf']['forwardingAddress'] = forwarding_address
+        changed = True
+    if c_prot_addr != protocol_address:
+        current_config['routing']['ospf']['protocolAddress'] = protocol_address
+        changed = True
+
     return changed, current_config
 
 
-def validate_areas(area_list):
+def normalize_areas(area_list):
+    new_area_list = []
     if area_list:
         for area in area_list:
             if not isinstance(area, dict):
                 return False, 'Area {} is not a valid dictionary'.format(area)
-            if not area.get('area_id'):
+            if area.get('area_id', 'missing') == 'missing':
                 return False, 'One Area in your list is missing the mandatory area_id parameter'
+            else:
+                area['area_id'] = str(area['area_id'])
             if area.get('type') not in [None, 'normal', 'nssa']:
                 return False, 'One Area has a wrong type, valid types are "normal" or "nssa"'
             if area.get('authentication') not in [None, 'none', 'password', 'md5']:
@@ -117,14 +131,18 @@ def validate_areas(area_list):
                 if not area.get('password'):
                     return False, 'One Area has authentication set, but no password specified'
 
-    return True, None
+            new_area_list.append(area)
+
+    return True, None, new_area_list
 
 
 def check_areas(client_session, current_config, d_area_list):
     changed = False
     new_areas = []
+
     if not d_area_list:
         d_area_list = []
+
     if current_config['routing']['ospf']['ospfAreas']:
         c_area_list = client_session.normalize_list_return(current_config['routing']['ospf']['ospfAreas']['ospfArea'])
     else:
@@ -180,6 +198,113 @@ def check_areas(client_session, current_config, d_area_list):
     return changed, current_config
 
 
+def normalize_area_mapping(area_map_list):
+    new_area_map_list = []
+    if area_map_list:
+        for area_map in area_map_list:
+            if not isinstance(area_map, dict):
+                return False, 'Area Map {} is not a valid dictionary'.format(area_map)
+
+            if area_map.get('area_id', 'missing') == 'missing':
+                return False, 'Area Map entry {} in your list is missing the mandatory ' \
+                              'area_id parameter'.format(area_map.get('area_id', None))
+            else:
+                area_map['area_id'] = str(area_map['area_id'])
+            if area_map.get('vnic', 'missing') == 'missing':
+                return False, 'Area Map entry {} in your list is missing the mandatory ' \
+                              'vnic parameter'.format(area_map.get('area_id', None))
+            else:
+                area_map['vnic'] = str(area_map['vnic'])
+
+            if area_map.get('hello', 'missing') == 'missing':
+                area_map['hello'] = '10'
+            else:
+                area_map['hello'] = str(area_map['hello'])
+
+            if area_map.get('dead', 'missing') == 'missing':
+                area_map['dead'] = '40'
+            else:
+                area_map['dead'] = str(area_map['dead'])
+
+            if area_map.get('cost', 'missing') == 'missing':
+                area_map['cost'] = '1'
+            else:
+                area_map['cost'] = str(area_map['cost'])
+
+            if area_map.get('priority', 'missing') == 'missing':
+                area_map['priority'] = '128'
+            else:
+                area_map['priority'] = str(area_map['priority'])
+
+            if area_map.get('ignore_mtu', 'missing') == 'missing':
+                area_map['ignore_mtu'] = 'false'
+            else:
+                area_map['ignore_mtu'] = str(area_map['ignore_mtu']).lower()
+
+            new_area_map_list.append(area_map)
+
+    return True, None, new_area_map_list
+
+
+def check_area_mapping(client_session, current_config, d_area_map):
+    changed = False
+    new_area_map = []
+
+    if not d_area_map:
+        d_area_map = []
+
+    if current_config['routing']['ospf']['ospfInterfaces']:
+        ospf_intf = current_config['routing']['ospf']['ospfInterfaces']['ospfInterface']
+        c_map_list = client_session.normalize_list_return(ospf_intf)
+    else:
+        c_map_list = []
+
+    # Filter out the Area Interf Maps that are on NSX but not in the desired list
+    for c_map in c_map_list:
+        for d_map in d_area_map:
+            if c_map['areaId'] == d_map['area_id']:
+                if c_map.get('vnic', 'missing') != d_map.get('vnic'):
+                    c_map['vnic'] = d_map.get('vnic')
+                    changed = True
+                if c_map.get('helloInterval', 'missing') != d_map.get('hello'):
+                    c_map['helloInterval'] = d_map.get('hello')
+                    changed = True
+                if c_map.get('deadInterval', 'missing') != d_map.get('dead'):
+                    c_map['deadInterval'] = d_map.get('dead')
+                    changed = True
+                if c_map.get('cost', 'missing') != d_map.get('cost'):
+                    c_map['cost'] = d_map.get('cost')
+                    changed = True
+                if c_map.get('priority', 'missing') != d_map.get('priority'):
+                    c_map['priority'] = d_map.get('priority')
+                    changed = True
+                if c_map.get('mtuIgnore', 'missing') != d_map.get('ignore_mtu'):
+                    c_map['mtuIgnore'] = d_map.get('ignore_mtu')
+                    changed = True
+
+                new_area_map.append(c_map)
+                break
+        else:
+            changed = True
+
+    # Add the Area Maps that are in the desired list but not in NSX
+    c_area_ids = [c_map['areaId'] for c_map in c_map_list]
+    for d_map in d_area_map:
+        if d_map['area_id'] not in c_area_ids:
+
+            new_map = {'areaId': d_map['area_id'], 'vnic': d_map.get('vnic'), 'helloInterval': d_map.get('hello'),
+                       'deadInterval': d_map.get('dead'), 'cost': d_map.get('cost'),
+                       'priority': d_map.get('priority'), 'mtuIgnore': d_map.get('ignore_mtu')}
+
+            new_area_map.append(new_map)
+            changed = True
+
+    if changed:
+        current_config['routing']['ospf']['ospfInterfaces'] = {'ospfInterface': new_area_map}
+
+    return changed, current_config
+
+
 def get_current_config(client_session, edge_id):
     response = client_session.read('routingConfig', uri_parameters={'edgeId': edge_id})
     return response['body']
@@ -203,11 +328,13 @@ def main():
             router_id=dict(required=True, type='str'),
             graceful_restart=dict(default=True, type='bool'),
             default_originate=dict(default=False, type='bool'),
+            protocol_address=dict(type='str'),
+            forwarding_address=dict(type='str'),
             logging=dict(default=False, type='bool'),
             log_level=dict(default='info', choices=['debug', 'info', 'notice', 'warning', 'error', 'critical',
                                                     'alert', 'emergency'], type='str'),
             areas=dict(type='list'),
-            area_mapping=dict(type='list')
+            area_map=dict(type='list')
         ),
         supports_check_mode=False
     )
@@ -232,19 +359,27 @@ def main():
     changed_state, current_config = set_ospf_state(current_config)
     changed_rtid, current_config = check_router_id(current_config, module.params['router_id'])
     changed_opt, current_config = check_ospf_options(current_config, module.params['graceful_restart'],
-                                                 module.params['default_originate'])
+                                                     module.params['default_originate'],
+                                                     module.params['forwarding_address'],
+                                                     module.params['protocol_address'])
 
-    valid, msg = validate_areas(module.params['areas'])
+    valid, msg, area_map = normalize_areas(module.params['areas'])
     if not valid:
         module.fail_json(msg=msg)
 
-    changed_areas, current_config = check_areas(client_session, current_config, module.params['areas'])
+    changed_areas, current_config = check_areas(client_session, current_config, area_map)
 
-    if (changed_state or changed_rtid or changed_opt or changed_areas):
+    valid, msg, area_map_list = normalize_area_mapping(module.params['area_map'])
+    if not valid:
+        module.fail_json(msg=msg)
+
+    changed_area_map, current_config = check_area_mapping(client_session, current_config, module.params['area_map'])
+
+    if (changed_state or changed_rtid or changed_opt or changed_areas or changed_area_map):
         update_config(client_session, current_config, edge_id)
         module.exit_json(changed=True, current_config=current_config)
     else:
-        module.exit_json(changed=False, current_config=current_config, areas=module.params['areas'])
+        module.exit_json(changed=False, current_config=current_config, area_map=area_map_list)
 
 
 from ansible.module_utils.basic import *
