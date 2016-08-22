@@ -1,0 +1,23 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: Configure OSPF ESG
+    nsx_redistribution:
+      ospf_state: present
+      bgp_state: present
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      edge_name: 'ansibleESG'
+      prefixes:
+        - {name: 'testprfx1', network: '192.168.179.0/24'}
+        - {name: 'testprfx2', network: '10.11.12.0/24'}
+      rules:
+        - {learner: 'ospf', priority: 0, static: false, connected: true, bgp: false, ospf: false, action: 'permit'}
+        - {learner: 'ospf', priority: 1, static: 'true', connected: 'true', bgp: 'false', ospf: 'false', prefix: 'testprfx1', action: 'deny'}
+        - {learner: 'bgp', priority: 1, connected: true, prefix: 'testprfx2', action: 'deny'}
+        - {learner: 'bgp', priority: 0, connected: true, prefix: 'testprfx1'}
+    register: redist
+    tags: redist
