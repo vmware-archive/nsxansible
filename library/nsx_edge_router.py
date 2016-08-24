@@ -353,7 +353,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
             description=dict(),
-            appliance_size=dict(default='Large', choices=['Compact', 'Large', 'X-Large', 'Quad Large']),
+            appliance_size=dict(default='Large', choices=['compact', 'large', 'xlarge', 'quadlarge']),
             resourcepool_moid=dict(required=True),
             datastore_moid=dict(required=True),
             datacenter_moid=dict(required=True),
