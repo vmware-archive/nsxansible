@@ -49,7 +49,7 @@ def main():
             sso_admin_username=dict(required=True),
             sso_admin_password=dict(required=True, no_log=True),
             sso_certthumbprint=dict(),
-            accept_all_certs=dict(choices=['True', 'False'])
+            accept_all_certs=dict(type='bool')
         ),
         required_one_of = [['accept_all_certs','sso_certthumbprint']],
         mutually_exclusive = [['accept_all_certs','sso_certthumbprint']],
