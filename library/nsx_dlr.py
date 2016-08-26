@@ -260,6 +260,8 @@ def check_interfaces(client_session, dlr_id, module):
     else:
         intfs = []
 
+    current_interfaces = intfs
+
     intfs_namelist = []
     for intf in intfs:
         intfs_namelist.append(intf['name'])
@@ -353,7 +355,16 @@ def check_interfaces(client_session, dlr_id, module):
                                   )
             changed = True
 
-    return changed
+    if changed:
+        intfs_api = client_session.read('interfaces', uri_parameters={'edgeId': dlr_id})['body']
+
+        if intfs_api['interfaces']:
+            current_interfaces = client_session.normalize_list_return(intfs_api['interfaces']['interface'])
+        else:
+            current_interfaces = []
+
+
+    return changed, current_interfaces
 
 
 def main():
@@ -418,7 +429,7 @@ def main():
         configure_ha(client_session, dlr_id, module.params['ha_enabled'], module.params['ha_deadtime'])
         changed = True
 
-    ifaces_changed = check_interfaces(client_session, dlr_id, module)
+    ifaces_changed, current_interfaces = check_interfaces(client_session, dlr_id, module)
     routes_changed = check_routes(client_session, dlr_id, routes, module)
 
     if ifaces_changed:
@@ -434,11 +445,9 @@ def main():
             changed = config_def_gw(client_session, dlr_id, None)
 
     if changed:
-        module.exit_json(changed=True, dlr_create_response=dlr_create_response,
-                         dlr_delete_response=dlr_delete_response)
+        module.exit_json(changed=True, interfaces=current_interfaces)
     else:
-        module.exit_json(changed=False, dlr_create_response=dlr_create_response,
-                         dlr_delete_response=dlr_delete_response)
+        module.exit_json(changed=False, interfaces=current_interfaces)
 
 
 from ansible.module_utils.basic import *
