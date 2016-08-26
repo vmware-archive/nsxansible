@@ -24,6 +24,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       datastore_name: "{{ vcenter_datastore }}"
+      validate_certs: False
     register: gather_moids_ds
     tags: moids
   - name: gather moid for cl
@@ -33,6 +34,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       cluster_name: "{{ vcenter_edge_cluster }}"
+      validate_certs: False
     register: gather_moids_cl
     tags: moids
   - name: gather moid for uplink vnic
@@ -42,6 +44,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       portgroup_name: 'vlan41'
+      validate_certs: False
     register: gather_moids_upl_pg
     tags: moids
   - name: gather moid for mgmt portgroup
@@ -51,6 +54,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       portgroup_name: 'vlan45'
+      validate_certs: False
     register: gather_moids_pg
     tags: moids
 

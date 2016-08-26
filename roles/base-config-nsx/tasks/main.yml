@@ -30,6 +30,7 @@
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
     cluster_name: "{{ targetClusters.cluster1.clusterName }}"
+    validate_certs: False
   register: vcenter_mgmt_cluster_moid
   tags: vsphere_facts
 
@@ -41,6 +42,7 @@
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
     datastore_name: "{{ nsxControllerDatastore }}"
+    validate_certs: False
   register: vcenter_mgmt_datastore_moid
   tags: vsphere_facts
 
@@ -52,6 +54,7 @@
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
     portgroup_name: "{{ nsxControllerPortGroup }}"
+    validate_certs: False
   register: vcenter_mgmt_portgroup_moid
   tags: vsphere_facts
 
@@ -92,6 +95,7 @@
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
     cluster_name: "{{ targetClusters.cluster1.clusterName }}"
+    validate_certs: False
   register: vcenter_compute_cluster_moid
   tags: vsphere_facts
 
@@ -121,6 +125,7 @@
     password: "{{ vcPassword }}"
     datacenter_name: "{{ targetDatacenterName }}"
     dvs_name: "{{ targetVdsName }}"
+    validate_certs: False
   register: vcenter_dvs_moid
   tags: vsphere_facts
 

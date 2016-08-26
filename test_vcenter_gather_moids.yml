@@ -3,19 +3,20 @@
   connection: local
   gather_facts: False
   vars_files:
-     - answerfile_new_nsxman.yml
+     - answerfile_TPM_Lab.yml
   tasks:
   - name: Gather vCenter MOIDs
     vcenter_gather_moids:
-      hostname: 'testvc.emea.nicira'
-      username: 'administrator@vsphere.local'
-      password: 'vmware'
-      datacenter_name: 'nsxlabdc'
-      cluster_name: 'compute'
+      hostname: 'vc01.yves.local'
+      username: 'administrator@yves.local'
+      password: 'VMware1!'
+      datacenter_name: 'tpm-lab'
+      cluster_name: 'management'
       #resourcepool_name: 'test_rp'
       #dvs_name: 'TransportVDS'
       #portgroup_name: 'VM Network'
       #datastore_name: 'NFS-Storage03'
+      validate_certs: False
     register: gather_moids_output
 
   - debug: msg="The searched moid is {{ gather_moids_output.object_id }}"
