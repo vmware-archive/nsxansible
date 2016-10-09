@@ -79,6 +79,23 @@ def create_edge_service_gateway(client_session, module):
     return edge_id, edge_params
 
 
+def check_ha_status(client_session, esg_id):
+    edge_ha_status = client_session.read('highAvailability', uri_parameters={'edgeId': esg_id})['body']
+    if edge_ha_status['highAvailability']['enabled'] == 'false':
+        return False
+    elif edge_ha_status['highAvailability']['enabled'] == 'true':
+        return True
+
+
+def configure_ha(session, esg_id, state, dead_time):
+    edge_ha_body = session.extract_resource_body_example('highAvailability', 'update')
+    edge_ha_body['highAvailability']['declareDeadTime'] = dead_time
+    edge_ha_body['highAvailability']['enabled'] = state
+
+    return session.update('highAvailability', uri_parameters={'edgeId': esg_id},
+                          request_body_dict=edge_ha_body)
+
+
 def create_init_ifaces(client_session, module):
     ifaces = module.params['interfaces']
     params_check_ifaces(module)
@@ -106,6 +123,7 @@ def create_init_ifaces(client_session, module):
                            })
 
     return vnics_info
+
 
 def delete_edge_service_gateway(client_session, esg_id):
     response = client_session.delete('nsxEdge', uri_parameters={'edgeId': esg_id})
@@ -363,7 +381,9 @@ def main():
             username=dict(),
             password=dict(),
             remote_access=dict(default='false', choices=['true', 'false']),
-            firewall=dict(default='true', choices=['true', 'false'])
+            firewall=dict(default='true', choices=['true', 'false']),
+            ha_enabled=dict(default='false', choices=['true', 'false']),
+            ha_deadtime=dict(default='15')
         ),
         supports_check_mode=False
     )
@@ -416,6 +436,15 @@ def main():
         changed = True
     elif module.params['firewall'] == 'true' and not fw_state:
         set_firewall(client_session, edge_id, True)
+        changed = True
+
+    ha_state = check_ha_status(client_session, edge_id)
+
+    if not ha_state and module.params['ha_enabled'] == 'true':
+        configure_ha(client_session, edge_id, module.params['ha_enabled'], module.params['ha_deadtime'])
+        changed = True
+    elif ha_state and module.params['ha_enabled'] == 'false':
+        configure_ha(client_session, edge_id, module.params['ha_enabled'], module.params['ha_deadtime'])
         changed = True
 
     if changed:
