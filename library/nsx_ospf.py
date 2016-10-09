@@ -262,10 +262,7 @@ def check_area_mapping(client_session, current_config, d_area_map):
     # Filter out the Area Interf Maps that are on NSX but not in the desired list
     for c_map in c_map_list:
         for d_map in d_area_map:
-            if c_map['vnic'] == d_map['vnic']:
-                if c_map.get('vnic', 'missing') != d_map.get('vnic'):
-                    c_map['areaId'] = d_map.get('area_id')
-                    changed = True
+            if c_map['vnic'] == d_map['vnic'] and c_map['areaId'] == d_map['area_id']:
                 if c_map.get('helloInterval', 'missing') != d_map.get('hello'):
                     c_map['helloInterval'] = d_map.get('hello')
                     changed = True
@@ -288,9 +285,9 @@ def check_area_mapping(client_session, current_config, d_area_map):
             changed = True
 
     # Add the Area Maps that are in the desired list but not in NSX
-    c_area_ids = [c_map['areaId'] for c_map in c_map_list]
+    c_area_vnics = [c_map['vnic'] for c_map in c_map_list]
     for d_map in d_area_map:
-        if d_map['area_id'] not in c_area_ids:
+        if d_map['vnic'] not in c_area_vnics:
 
             new_map = {'areaId': d_map['area_id'], 'vnic': d_map.get('vnic'), 'helloInterval': d_map.get('hello'),
                        'deadInterval': d_map.get('dead'), 'cost': d_map.get('cost'),
