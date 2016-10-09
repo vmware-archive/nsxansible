@@ -622,6 +622,298 @@ Example:
 #  - debug: var=transport_zone
 ```
 
+### Module `nsx_edge_router`
+##### Deploys, updates or deletes a NSX Edge Services Gateway in NSX
+
+- name:
+Mandatory: name of the Edge Services Gateway to be deployed
+- state:
+Optional: present or absent, defaults to present
+- description:
+Optional: A free text description for the ESG
+- appliance size:
+Optional: The ESG size, choices=['compact', 'large', 'xlarge', 'quadlarge'], defaults to 'large'
+- resourcepool_moid:
+Mandatory: The vCenter MOID of the ressource pool to deploy the ESG in
+- datastore_moid:
+Mandatory: The vCenter MOID of the datatore to deploy the ESG on
+- datacenter_moid:
+Mandatory: The vCenter MOID of the datacenter to deploy the ESG in
+- interfaces:
+Mandatory: A dictionary that holds the configuration of each vnic as a sub-dictionary. See the interfaces details section for more information
+- default_gateway:
+Optional: The IP Address of the default gateway
+- routes:
+Optional: A list of dictionaries holding static route configurations. See the route details section for more information
+- username:
+Optional: The username used for the CLI access to the ESG
+- password:
+Optional: The password used for the CLI access to the ESG
+- remote_access:
+Optional: true / false, is SSH access to the ESG enabled, defaults to false
+- firewall:
+Optional: true / false, is the ESG Firewall enabled, defaults to true
+- ha_enabled:
+Optional: true / false, deploy ESG as an HA pair, defaults to false
+- ha_deadtime:
+Optional: Sets the deadtime for Edge HA, defaults to 15
+
+Example:
+```yml
+- name: ESG creation
+    nsx_edge_router:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansibleESG_testplay'
+      description: 'This ESG is created by nsxansible'
+      resourcepool_moid: "{{ gather_moids_cl.object_id }}"
+      datastore_moid: "{{ gather_moids_ds.object_id }}"
+      datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
+      interfaces:
+        vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
+        vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'transit_net', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
+      default_gateway: '10.114.209.65'
+      routes:
+        - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+        - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
+        - {network: '10.11.14.0/24', next_hop: '192.168.178.2'}
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+      firewall: 'false'
+      ha_enabled: 'true'
+    register: create_esg
+    tags: esg_create
+```
+
+##### Interfaces Dict
+Each vnic passed to the module in the interfaces dictionary variable is defined as a sub-dictionary with the following key / value pairs:
+
+dict key: Each parent disctionary has the key set to the vnic id (e.g. vnic0), followed by a sub-directory with the vnic settings.
+
+Sub-Directory:
+- ip:
+Mandatory: The IP Address of the vnic
+- prefix_len:
+Mandatory: The prefix length for the IP on the vnic, e.g. 24 for a /24 (255.255.255.0)
+- if_type:
+Mandatory: The interface type, either 'uplink' or 'internal'
+- logical_switch:
+Optional: The logical switch id to attach the ESG vnic to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
+- portgroupid:
+Optional: The Portgroup MOID to attach the ESG vnic to, e.g. network-10. NOTE: Either logical_switch or portgroupid need to be supplied.
+- fence_param:
+Optional: Additional fence parameters supplied to the vnic, e.g. 'ethernet0.filter1.param1=1'
+
+Example:
+```yml
+interfaces:
+  vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
+  vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'transit_net', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
+```
+
+##### Routes list
+Each route is passed to the module as a dictionary in a list. Each dictionary has the following key / value pairs:
+- network:
+Mandatory: The target network for the route, e.g. '10.11.12.0/24'
+- next_hop:
+Mandatory: The next hop IP for the route, e.g. '192.168.178.2'
+- admin_distance:
+Optional: The admin_distance to be used for this route
+- mtu:
+Optional: The MTU supported by this route
+- description:
+Optional: A free text description for the static route
+
+Example:
+```yml
+routes:
+  - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+  - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
+  - {network: '10.11.14.0/24', next_hop: '192.168.178.2'}
+```
+
+
+### Module `nsx_dlr`
+##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX
+
+- name:
+Mandatory: name of the DLR to be deployed
+- state:
+Optional: present or absent, defaults to present
+- description:
+Optional: A free text description for the DLR
+- resourcepool_moid:
+Mandatory: The vCenter MOID of the ressource pool to deploy the DLR control VM in
+- datastore_moid:
+Mandatory: The vCenter MOID of the datatore to deploy the DLR control VM on
+- datacenter_moid:
+Mandatory: The vCenter MOID of the datacenter to deploy the DLR control VM in
+- mgmt_portgroup_moid:
+Mandatory: The vCenter MOID of the portgroup used for the HA network and control VM management
+- interfaces:
+Mandatory: A list that holds the configuration of each interface as a dictionary. See the interfaces details section for more information
+- default_gateway:
+Optional: The IP Address of the default gateway
+- routes:
+Optional: A list of dictionaries holding static route configurations. See the route details section for more information
+- username:
+Optional: The username used for the CLI access to the DLR Control VM
+- password:
+Optional: The password used for the CLI access to the DLR Control VM
+- remote_access:
+Optional: true / false, is SSH access to the DLR Control VM enabled, defaults to false
+- ha_enabled:
+Optional: true / false, deploy DLR Control VM as an HA pair, defaults to false
+- ha_deadtime:
+Optional: Sets the deadtime for Edge HA, defaults to 15
+
+Example:
+```yml
+  - name: DLR creation
+    nsx_dlr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansibleDLR'
+      description: 'This DLR is created by nsxansible'
+      resourcepool_moid: "{{ gather_moids_cl.object_id }}"
+      datastore_moid: "{{ gather_moids_ds.object_id }}"
+      datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
+      mgmt_portgroup_moid: "{{ gather_moids_pg.object_id }}"
+      interfaces:
+        - {name: 'Uplink vnic', ip: '192.168.178.2', prefix_len: 24, logical_switch: 'edge_ls', iftype: 'uplink'}
+        - {name: 'Internal iface', ip: '172.16.1.1', prefix_len: 24, portgroup_id: "{{ gather_moids_pg.object_id }}", iftype: 'uplink'}
+        - {name: 'Internal new', ip: '172.16.4.1', prefix_len: 26, logical_switch: 'new_lswitch_name', iftype: 'internal'}
+      routes:
+        - {network: '10.11.22.0/24', next_hop: '172.16.1.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+        - {network: '10.11.23.0/24', next_hop: '172.16.1.2', mtu: '1600'}
+        - {network: '10.11.24.0/24', next_hop: '172.16.4.2'}
+        - {network: '10.11.25.0/24', next_hop: '172.16.4.2'}
+      default_gateway: '192.168.178.1'
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+      ha_enabled: 'true'
+    register: create_dlr
+    tags: dlr_create
+```
+
+##### Interfaces list
+Each interface passed to the module in the interfaces list variable is defined as a dictionary with the following key / value pairs:
+
+- ip:
+Mandatory: The IP Address of the interface
+- prefix_len:
+Mandatory: The prefix length for the IP on the interface, e.g. 24 for a /24 (255.255.255.0)
+- if_type:
+Mandatory: The interface type, either 'uplink' or 'internal'
+- logical_switch:
+Optional: The logical switch id to attach the DLR Interface to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
+- portgroupid:
+Optional: The Portgroup MOID to attach the DLR Interface to, e.g. network-10. NOTE: Either logical_switch or portgroupid need to be supplied.
+
+Example:
+```yml
+interfaces:
+  - {name: 'Uplink vnic', ip: '192.168.178.2', prefix_len: 24, logical_switch: 'edge_ls', iftype: 'uplink'}
+  - {name: 'Internal iface', ip: '172.16.1.1', prefix_len: 24, portgroup_id: "{{ gather_moids_pg.object_id }}", iftype: 'uplink'}
+  - {name: 'Internal new', ip: '172.16.4.1', prefix_len: 26, logical_switch: 'new_lswitch_name', iftype: 'internal'}
+```
+
+##### Routes list
+Each route is passed to the module as a dictionary in a list. Each dictionary has the following key / value pairs:
+- network:
+Mandatory: The target network for the route, e.g. '10.11.12.0/24'
+- next_hop:
+Mandatory: The next hop IP for the route, e.g. '192.168.178.2'
+- admin_distance:
+Optional: The admin_distance to be used for this route
+- mtu:
+Optional: The MTU supported by this route
+- description:
+Optional: A free text description for the static route
+
+Example:
+```yml
+routes:
+  - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
+  - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
+  - {network: '10.11.14.0/24', next_hop: '192.168.178.2'}
+```
+
+### Module `nsx_ospf`
+##### enables, updates or deletes OSPF configurations in NSX for ESGs and DLRs
+
+- state:
+Optional: present or absent, defaults to present
+- edge_name:
+Mandatory: The name of the ESG or DLR to be configured for OSPF
+- router_id:
+Mandatory: The ESG or DLR Router id to be configured, e.g. configured as an IP Address
+- graceful_restart:
+Optional: true / false, is graceful restart enabled, defaults to true
+- default_originate:
+Optional: true / false, will the ESG or DLR announce its default route into OSPF, defaults to false
+- protocol_address:
+Unused for ESG, Mandatory for DLR: The IP address to be used to send OSPF message from
+- forwarding_address:
+Unused for ESG, Mandatory for DLR: The IP address to be used as the next-hop for the traffic
+- logging:
+Optional: true / false, will the ESG or DLR log state changes, defaults to false
+- log_level:
+Optional: Log level for OSPF state changes, choices=['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'], defaults to 'info'
+- areas:
+Optional: A list of Dictionaries with Areas, See the Area details section for more information
+- area_map:
+Optional: A list of Dictionaries with Area to interface mappings, See the area_map details section for more information
+
+Example:
+```yml
+  - name: Configure OSPF DLR
+    nsx_ospf:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      edge_name: 'ansibleDLR'
+      router_id: '172.24.1.3'
+      forwarding_address: '172.24.1.2'
+      protocol_address: '172.24.1.3'
+      areas: 
+        - { area_id: 10 }
+      area_map:
+        - { area_id: 10, vnic: "{{ dlr_uplink_index }}" }      
+    register: ospf_dlr
+    tags: ospf_dlr
+```
+
+##### Area list
+Each Area is defined as a dictionary holding the following Key / Value pairs:
+
+- area_id:
+Mandatory: The Area id, e.g. 0
+- type:
+Optional: The area type, e.g. 'nssa' or 'normal', defaults to 'normal'
+- authentication:
+Optional: Authentication type, 'none', 'password' or 'md5', defaults to 'none'
+- password:
+Mandatory for Authentication types 'password' or 'md5', the password or md5 hash used to authenticate
+
+NOTE: When Authentication types are used, the module will always report a change as the password can't be retrieved and check from NSX Manager
+
+Example:
+```yml
+areas: 
+  - { area_id: 0 }
+  - { area_id: 61 }
+  - { area_id: 59, type: 'nssa' }
+  - { area_id: 62, type: 'nssa', authentication: 'password', password: 'mysecret' }
+```
+
+##### Area mapping list
+Each Area / Interface mapping list is holding the following Key / Value pairs:
+
+- 
+
+
 ## Example Playbooks and roles
 ### As part of this repo you will find example playbooks and roles:
 
