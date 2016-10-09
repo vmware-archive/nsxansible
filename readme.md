@@ -875,6 +875,10 @@ Example:
       state: present
       edge_name: 'ansibleDLR'
       router_id: '172.24.1.3'
+      default_originate: True
+      graceful_restart: False
+      logging: True
+      log_level: debug
       forwarding_address: '172.24.1.2'
       protocol_address: '172.24.1.3'
       areas: 
@@ -911,8 +915,103 @@ areas:
 ##### Area mapping list
 Each Area / Interface mapping list is holding the following Key / Value pairs:
 
-- 
+- area_id:
+Mandatory: The Area Id, e.g. 0
+- vnic:
+Mandatory: The vnic Id to map the Area to, e.g. 0 for vnic0
+- ignore_mtu:
+Optional: true / false, Ignore MTU mismatches between OSPF interfaces, defaults to false
+- hello:
+Optional: The Hello Interval, defaults to 10
+- dead:
+Optional: The dead interval, defaults to 40
+- cost:
+Optional: The Interface Cost, default to 1
+- priority:
+Optional: The Interface Priority, defaults to 128
 
+Example:
+```yml
+area_map:
+  - { area_id: 0, vnic: 0, hello: 20}
+  - { area_id: 61, vnic: 1, ignore_mtu: True , hello: 15, dead: 60, priority: 128, cost: 1}
+```
+
+### Module `nsx_redistribution`
+##### enables, updates or deletes routing protocol redistribution in NSX for ESGs and DLRs (OSPF & BGP)
+
+- ospf_state:
+Mandatory: true / false, is redistribution enabled for OSPF
+- bgp_state:
+Mandatory: true / false, is redistribution enabled for BGP
+- prefixes:
+Optional: A list of dictionaries containing prefixes, See the prefixes details section for more information
+- rules:
+Optional: A list of dictionaries containing redistribution rules, See the rules details section for more information
+
+Example:
+```yml
+  - name: Configure OSPF ESG
+    nsx_redistribution:
+      ospf_state: present
+      bgp_state: present
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      edge_name: 'ansibleESG'
+      prefixes:
+        - {name: 'testprfx1', network: '192.168.179.0/24'}
+        - {name: 'testprfx2', network: '10.11.12.0/24'}
+      rules:
+        - {learner: 'ospf', priority: 0, static: false, connected: true, bgp: false, ospf: false, action: 'permit'}
+        - {learner: 'ospf', priority: 1, static: 'true', connected: 'true', bgp: 'false', ospf: 'false', prefix: 'testprfx1', action: 'deny'}
+        - {learner: 'bgp', priority: 1, connected: true, prefix: 'testprfx2', action: 'deny'}
+        - {learner: 'bgp', priority: 0, connected: true, prefix: 'testprfx1'}
+    register: redist
+    tags: redist
+```
+
+##### Prefixes list
+The prefixes variable holds a list of dictionaries with the following Key / Value pairs:
+
+- name:
+Mandatory: The name of the prefix list
+- network:
+Mandatory: The network to match, in the form of '<network>/<prefix_len>', e.g. '192.168.179.0/24'
+
+Example:
+```yml
+prefixes:
+  - {name: 'testprfx1', network: '192.168.179.0/24'}
+  - {name: 'testprfx2', network: '10.11.12.0/24'}
+```
+
+##### Rules list
+The rules variable holds a list of dictionaries with the following Key / Value pairs:
+
+- learner:
+Mandatory: The learner protocol, this can be 'bgp' or 'ospf'
+- priority:
+Mandatory: The priority (order) in which rules are applied, e.g. 0,1,2,3,...
+- static:
+Optional: true / false, reditribute static routes, defaults to false
+- connected:
+Optional: true / false, reditribute connected routes, defaults to false
+- bgp:
+Optional: true / false, reditribute bgp routes, defaults to false
+- ospf:
+Optional: true / false, reditribute ospf routes, defaults to false
+- prefix:
+Optional: A prefix list name to use as a filter for the routes
+- action:
+Optional: The action to apply with this rule, can be 'permit', 'deny', defaults to 'permit'
+
+Example:
+```yml
+rules:
+  - {learner: 'ospf', priority: 0, static: false, connected: true, bgp: false, ospf: false, action: 'permit'}
+  - {learner: 'ospf', priority: 1, static: 'true', connected: 'true', bgp: 'false', ospf: 'false', prefix: 'testprfx1', action: 'deny'}
+  - {learner: 'bgp', priority: 1, connected: true, prefix: 'testprfx2', action: 'deny'}
+  - {learner: 'bgp', priority: 0, connected: true, prefix: 'testprfx1'}
+```
 
 ## Example Playbooks and roles
 ### As part of this repo you will find example playbooks and roles:
