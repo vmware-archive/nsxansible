@@ -104,6 +104,7 @@
       username: 'admin'
       password: 'VMware1!VMware1!'
       firewall: 'false'
+      ha_enabled: 'true'
     register: create_esg
     tags: esg_create
 

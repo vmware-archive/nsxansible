@@ -63,20 +63,6 @@
   - debug: var=create_dlr
     tags: debug
 
-  - name: DLR config
-    nsx_dlr_config:
-      nsxmanager_spec: "{{ nsxmanager_spec }}"
-      dlr_router_name: 'ansibleDLR'
-      dlr_router_id: '10.10.10.3'
-      uplink_interface_name: 'Uplink vnic'
-      protocol_address: '10.10.10.3'
-      forwarding_address: '10.10.10.1'
-    register: config_dlr
-    tags: dlr_config
-
-  - debug: var=config_dlr
-    tags: debug
-
   - name: DLR Delete
     nsx_dlr:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
