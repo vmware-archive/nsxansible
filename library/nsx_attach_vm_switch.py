@@ -33,6 +33,14 @@ def get_logical_switch(client_session, logical_switch_name):
 
     return logical_switch_id
 
+def attach_vm_to_portgroup(client_session, object_moid, portgroup_id):
+  attach = { 'com.vmware.vshield.vsm.inventory.dto.VnicDto':
+      {
+        'objectId': object_moid + '.000', 'vnicUuid': object_moid + '.000',
+        'portgroupId': portgroup_id }
+    }
+  return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -40,7 +48,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             portgroup_id=dict(default=None),
             logicalswitch=dict(default=None),
-            objectUUID=dict(required=True),
+            object_moid=dict(required=True),
         ),
         supports_check_mode=False
     )
@@ -65,19 +73,11 @@ def main():
       if portgroup_id:
        module.fail_json(msg='If VM must be detached, don\'t set portgroup or logicalswitch') 
     
-    action = attachVmToPortgroup(client_session, module.params['objectUUID'],  portgroup_id)
+    action = attach_vm_to_portgroup(client_session, module.params['object_moid'],  portgroup_id)
 
     if action:
       changed=True
     module.exit_json(changed=changed)
-
-def attachVmToPortgroup(client_session, objectUUID, portgroup_id):
-  attach = { 'com.vmware.vshield.vsm.inventory.dto.VnicDto': 
-      { 
-        'objectId': objectUUID + '.000', 'vnicUuid': objectUUID + '.000', 
-        'portgroupId': portgroup_id } 
-    }
-  return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
 
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
