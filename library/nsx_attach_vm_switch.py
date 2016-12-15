@@ -48,8 +48,8 @@ def main():
     portgroup_id = module.params['portgroup_id']
     logicalswitch = module.params['logicalswitch']
     
-    if portgroup_id != None and logicalswitch != None:
-      module.fail_json(msg='Only et portgroup_id OR logicalswitch, not both!')
+    if portgroup_id and logicalswitch:
+      module.fail_json(msg='Only set portgroup_id OR logicalswitch, not both!')
 
     from nsxramlclient.client import NsxClient
     client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'], module.params['nsxmanager_spec']['host'],
@@ -62,7 +62,7 @@ def main():
     changed=False
 
     if module.params['state'] == 'absent':
-      if portgroup_id != None:
+      if portgroup_id:
        module.fail_json(msg='If VM must be detached, don\'t set portgroup or logicalswitch') 
     
     action = attachVmToPortgroup(client_session, module.params['objectUUID'],  portgroup_id)
