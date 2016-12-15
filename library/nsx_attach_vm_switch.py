@@ -72,7 +72,11 @@ def main():
     module.exit_json(changed=changed)
 
 def attachVmToPortgroup(client_session, objectUUID, portgroup_id):
-  attach = { 'com.vmware.vshield.vsm.inventory.dto.VnicDto': { 'objectId': objectUUID + '.000', 'vnicUuid': objectUUID + '.000', 'portgroupId': portgroup_id } }
+  attach = { 'com.vmware.vshield.vsm.inventory.dto.VnicDto': 
+      { 
+        'objectId': objectUUID + '.000', 'vnicUuid': objectUUID + '.000', 
+        'portgroupId': portgroup_id } 
+    }
   return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
 
 from ansible.module_utils.basic import *
