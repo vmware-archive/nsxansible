@@ -17,6 +17,7 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+
 def get_logical_switch(client_session, logical_switch_name):
     """
     :param client_session: An instance of an NsxClient Session
@@ -33,13 +34,13 @@ def get_logical_switch(client_session, logical_switch_name):
 
     return logical_switch_id
 
+
 def attach_vm_to_portgroup(client_session, object_moid, portgroup_id):
-  attach = { 'com.vmware.vshield.vsm.inventory.dto.VnicDto':
-      {
-        'objectId': object_moid + '.000', 'vnicUuid': object_moid + '.000',
-        'portgroupId': portgroup_id }
-    }
-  return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
+    attach = {'com.vmware.vshield.vsm.inventory.dto.VnicDto': {'objectId': object_moid + '.000',
+                                                               'vnicUuid': object_moid + '.000',
+                                                               'portgroupId': portgroup_id}}
+    return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
+
 
 def main():
     module = AnsibleModule(
@@ -55,30 +56,32 @@ def main():
 
     portgroup_id = module.params['portgroup_id']
     logicalswitch = module.params['logicalswitch']
-    
+
     if portgroup_id and logicalswitch:
-      module.fail_json(msg='Only set portgroup_id OR logicalswitch, not both!')
+        module.fail_json(msg='Only set portgroup_id OR logicalswitch, not both!')
 
     from nsxramlclient.client import NsxClient
     client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'], module.params['nsxmanager_spec']['host'],
-                             module.params['nsxmanager_spec']['user'], module.params['nsxmanager_spec']['password'])
+                               module.params['nsxmanager_spec']['user'], module.params['nsxmanager_spec']['password'])
 
-    if logicalswitch != None:
-      lswitch_id = get_logical_switch(client_session, logicalswitch)
-      portgroup_id = lswitch_id
+    if logicalswitch:
+        lswitch_id = get_logical_switch(client_session, logicalswitch)
+        portgroup_id = lswitch_id
 
-    changed=False
+    changed = False
 
     if module.params['state'] == 'absent':
-      if portgroup_id:
-       module.fail_json(msg='If VM must be detached, don\'t set portgroup or logicalswitch') 
-    
-    action = attach_vm_to_portgroup(client_session, module.params['object_moid'],  portgroup_id)
+        if portgroup_id:
+            module.fail_json(msg='If VM must be detached, don\'t set portgroup or logicalswitch')
+
+    action = attach_vm_to_portgroup(client_session, module.params['object_moid'], portgroup_id)
 
     if action:
-      changed=True
+        changed = True
     module.exit_json(changed=changed)
 
+
 from ansible.module_utils.basic import *
+
 if __name__ == '__main__':
     main()
