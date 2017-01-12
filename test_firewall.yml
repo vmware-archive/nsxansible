@@ -1,0 +1,74 @@
+#The 'create' mode : Adding multiple firewall rules for the given edge device. This will overwrite the existing firewall config.
+- name: Add multiple firewall rules
+      nsx_firewall:
+        nsxmanager_spec: 
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        mode: "create"
+        edge_name: "wdc04-0-ops-edge"
+        rules: 
+            - action: accept
+              destination_ip_address: 10.0.0.0/24
+              name: allow_ssh
+              description: Allow all SSH requests to 10.0.0.0/24
+              application_id: "application-18"
+            - action: accept
+              source_ip_address: 172.16.0.0/12
+              name: allow_dns_dhcp
+              description: Allow all DNS/DHCP requests from 172.16.0.0/12
+              application_id: "application-18"
+
+#The 'append' mode : Appending a firewall rule to the given edge device
+- name: Append a firewall rule
+      nsx_firewall:
+        nsxmanager_spec: 
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        mode: append
+        edge_name: "wdc04-0-ops-edge"
+        description: "Latest rule"
+        name: "My Rule"
+        action: "accept"
+        source_ip_address: "18.1.11.0/24"
+        destination_ip_address: "8.11.11.111"
+        application_id: dns_application
+
+#The 'query' mode : Querying all the firewall rules for an edge
+- name: Query all the firewall rules for an edge
+      nsx_firewall:
+        nsxmanager_spec: 
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        edge_id: "edge-8"
+        mode: query
+
+
+#The 'delete' mode : Deleting a firewall rule with the given rule ID
+- name: Delete a firewall rule
+      nsx_firewall:
+        nsxmanager_spec: 
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        mode: delete
+        edge_id: "edge-8"
+        rule_id: 181110
+
+#The 'set_default_action' mode : Setting the default firewall action for an edge
+- name: Set default firewall action for an edge firewall
+      nsx_firewall:
+        nsxmanager_spec: 
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        default_action: "accept"
+        edge_name: "wdc04-0-ops-edge"
+        mode: "set_default_action"
