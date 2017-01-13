@@ -21,12 +21,12 @@
 DOCUMENTATION = '''
 ---
 
-module: nsx_firewall
+module: nsx_edge_firewall
 
 short_description: Configure edge firewall rules
 
 description:
-  - The M(nsx_firewall) module is used to configure an NSX edge firewall (ESG or DLR). (Not to be confused with the distributed firewall). The module can be used to create, append, query and delete firewall rules. Along with that the default firewall policy can also be set using this. 
+  - The M(nsx_edge_firewall) module is used to configure an NSX edge firewall (ESG or DLR). (Not to be confused with the distributed firewall). The module can be used to create, append, query and delete firewall rules. Along with that the default firewall policy can also be set using this. 
 
 options:
 
@@ -151,7 +151,7 @@ notes:
 EXAMPLES = '''
 #The 'create' mode : Adding multiple firewall rules for the given edge device. This will overwrite the existing firewall config.
 - name: Add multiple firewall rules
-      nsx_firewall:
+      nsx_edge_firewall:
         nsxmanager_spec: 
           raml_file: "nsxraml/nsxvapi.raml"
           host: "nsxmanager.example.com"
@@ -173,7 +173,7 @@ EXAMPLES = '''
 
 #The 'append' mode : Appending a firewall rule to the given edge device
 - name: Append a firewall rule
-      nsx_firewall:
+      nsx_edge_firewall:
         nsxmanager_spec: 
           raml_file: "nsxraml/nsxvapi.raml"
           host: "nsxmanager.example.com"
@@ -190,7 +190,7 @@ EXAMPLES = '''
 
 #The 'query' mode : Querying all the firewall rules for an edge
 - name: Query all the firewall rules for an edge
-      nsx_firewall:
+      nsx_edge_firewall:
         nsxmanager_spec: 
           raml_file: "nsxraml/nsxvapi.raml"
           host: "nsxmanager.example.com"
@@ -202,7 +202,7 @@ EXAMPLES = '''
 
 #The 'delete' mode : Deleting a firewall rule with the given rule ID
 - name: Delete a firewall rule
-      nsx_firewall:
+      nsx_edge_firewall:
         nsxmanager_spec: 
           raml_file: "nsxraml/nsxvapi.raml"
           host: "nsxmanager.example.com"
@@ -214,7 +214,7 @@ EXAMPLES = '''
 
 #The 'set_default_action' mode : Setting the default firewall action for an edge
 - name: Set default firewall action for an edge firewall
-      nsx_firewall:
+      nsx_edge_firewall:
         nsxmanager_spec: 
           raml_file: "nsxraml/nsxvapi.raml"
           host: "nsxmanager.example.com"
