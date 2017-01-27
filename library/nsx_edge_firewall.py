@@ -26,7 +26,7 @@ module: nsx_edge_firewall
 short_description: Configure edge firewall rules
 
 description:
-  - The M(nsx_edge_firewall) module is used to configure an NSX edge firewall (ESG or DLR). (Not to be confused with the distributed firewall). The module can be used to create, append, query and delete firewall rules. Along with that the default firewall policy can also be set using this. 
+  - The M(nsx_edge_firewall) module is used to configure an NSX edge firewall (ESG or DLR). (Not to be confused with the distributed firewall). The module can be used to create, append, query, delete and reset firewall rules. Along with that the default firewall policy can also be set using this. 
 
 options:
 
@@ -57,7 +57,7 @@ options:
     required: true
     default: null
     aliases: []
-    choices: ["create", "append", "query", "delete", "set_default_action" , "reset", "generate_ruleset"]
+    choices: ["create", "append", "query", "delete", "set_default_action"]
 
   source:
     description:
@@ -133,13 +133,6 @@ options:
     required: false
     default: null
     type: dict
-    aliases: []
-
-  yaml_output_file:
-    description:
-      - Only required when the 'generate_ruleset' mode is used. This specifies the YAML file to which the generated rulesets will be written to 
-    required: false
-    default: null    
     aliases: []
 
   default_action:
@@ -262,22 +255,6 @@ EXAMPLES = '''
           password: "l0ngPassw0rd!!"
         mode: "reset"
         edge_id: "edge-1"
-
-#The 'generate_ruleset' mode : Generate YAML ruleset of an existing firewall
-- name: Generate rulesets from an existing firewall
-  hosts: localhost
-  connection: local
-  tasks:
-    - name: Generate rulesets from an existing firewall 
-      nsx_edge_firewall:
-        nsxmanager_spec:
-          raml_file: "nsxraml/nsxvapi.raml"
-          host: "nsxmanager.example.com""
-          user: "admin"
-          password: "l0ngPassw0rd!!"
-        mode: "generate_ruleset"
-        edge_id: "edge-1"
-        yaml_output_file: "./generated_rules.yml"
 
 '''
 
@@ -560,7 +537,7 @@ def main():
         nsxmanager_spec=dict(required=True, type="dict"),
         edge_name=dict(required=False),
         edge_id=dict(required=False),
-        mode=dict(required=True, choices=["create", "append", "query", "delete", "set_default_action", "reset", "generate_ruleset"]),
+        mode=dict(required=True, choices=["create", "append", "query", "delete", "set_default_action", "reset"]),
         source=dict(required=False, type="dict"),
         destination=dict(required=False, type="dict"),
         action=dict(required=False, choices=["accept", "deny", "reject"]),
@@ -568,7 +545,6 @@ def main():
         description=dict(required=False),
         application=dict(required=False, type="dict"),        
         rule_id=dict(required=False),
-        yaml_output_file=dict(required=False),
         direction=dict(required=False, choices=["in", "out"]),
         global_config=dict(required=False, type="dict"),
         rules=dict(required=False, type="list"),
@@ -605,7 +581,6 @@ def main():
     rules = module.params.get("rules", None)
     global_config = module.params.get("global_config", None)
     default_action = module.params.get("default_action", None)
-    yaml_output_file = module.params.get("yaml_output_file", None)
 
     if mode == "create":
         #'create' mode:
@@ -703,33 +678,8 @@ def main():
         else:
             module.fail_json(msg="Could not reset the firewall rules for the edge with ID %s" %(edge_id))
 
-    elif mode == "generate_ruleset":
-        #'generate_ruleset' mode (Requires pyyaml module)
-        # Given an existing firewall:
-        #   - Queries and gets the existing user defined rule : Rules having 'ruleType' = 'user'
-        #   - Converts the rules into YAML and writes to the specified file
-        #This file can be used in place in the 'vars_files' section in Ansible and the rules can be referred via the {{firewall_rules}} variable
-        if not yaml_output_file:
-            module.fail_json(msg="The parameter 'yaml_output_file' is required to generate the ruleset")
-
-        rules = query_firewall_rules(client_session, edge_id)
-        user_rules = [rule for rule in rules if rule["ruleType"] == "user"]
-
-        if not user_rules:
-            module.exit_json(msg="No user rules found for the given edge")
-
-        with open(yaml_output_file, "w") as fp:
-            to_dump = {"firewall_rules":user_rules}
-            try:
-                fp.write(yaml.dump(to_dump, default_flow_style=False, indent=4))
-            except IOError:
-                module.fail_json(msg="Error writing to the file %s" %(yaml_output_file))
-            else:
-                module.exit_json(msg="Successfully created the ruleset file %s" %(yaml_output_file))
 
 
-
-import yaml
 from ansible.module_utils.basic import *
 from nsxramlclient.client import NsxClient
 
