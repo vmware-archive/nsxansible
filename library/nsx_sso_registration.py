@@ -44,7 +44,7 @@ def main():
             state=dict(default='present', choices=['present', 'absent']),
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             sso_lookupservice_url=dict(required=True),
-            sso_lookupservice_port=dict(required=True),
+            sso_lookupservice_port=dict(required=True, type='int'),
             sso_lookupservice_server=dict(required=True),
             sso_admin_username=dict(required=True),
             sso_admin_password=dict(required=True, no_log=True),
