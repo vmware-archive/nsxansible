@@ -1,0 +1,16 @@
+---
+- name: Testing the loadbalancer module
+  hosts: localhost
+  connection: local
+  vars_files:
+    - loadbalancer_configuration.yml
+  tasks:
+    - name: Configure the loadbalancer
+      nsx_loadbalancer:
+        nsxmanager_spec:
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"        
+        edge_name: "cust-edge"
+        configuration: "{{loadBalancer}}"

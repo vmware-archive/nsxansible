@@ -1,0 +1,97 @@
+---
+#0)Define a monitor which checks /favicon.ico on the backend server
+#1)Redirect all HTTP request to HTTPS
+#2)Loadbalance all HTTPS requests coming to the frontend 1.1.1.1 to the backends 172.16.0.8 and 172.16.0.9 port 443
+#3)Loadbalance all requests to 1.1.1.1 port 8080 to 172.16.0.8 and 172.16.0.9 port 8080 
+
+loadBalancer:
+    accelerationEnabled: 'true'
+    enabled: 'true'
+    logging: 
+        logLevel: error
+
+    applicationProfile:
+    -   name: TCP
+        template: TCP
+
+    applicationRule:
+        name: HTTP Redirect
+        script: redirect scheme https code 302 if !{ ssl_fc }
+
+    monitor:
+        expected: HTTP/1.1 200
+        interval: '5'
+        maxRetries: '3'
+        method: GET
+        monitorId: monitor-1
+        name: HTTPS-MONITOR
+        timeout: '5'
+        type: https
+        url: /favicon.ico
+
+    pool:
+    -   algorithm: ip-hash
+        member:
+        -   condition: enabled
+            ipAddress: 172.16.0.8
+            monitorPort: '443'
+            name: BACKEND-1
+            port: '443'
+            weight: '1'
+        -   condition: enabled
+            ipAddress: 172.16.0.9
+            monitorPort: '443'
+            name: BACKEND-2
+            port: '443'
+            weight: '1'
+        monitorName: HTTPS-MONITOR
+        name: HTTPS-POOL
+        transparent: 'true'
+
+    -   algorithm: ip-hash
+        member:
+        -   condition: enabled
+            ipAddress: 172.16.0.8  
+            monitorPort: '443'
+            name: BACKEND-1
+            port: '8080'
+            weight: '1'
+        -   condition: enabled
+            ipAddress: 172.16.0.9
+            monitorPort: '443'
+            name: BACKEND-2
+            port: '8080'
+            weight: '1'
+        monitorName: HTTPS-MONITOR
+        name: PROXY-POOL
+        transparent: 'true'
+
+
+    virtualServer:
+    -   accelerationEnabled: 'false'
+        applicationProfileName: TCP
+        applicationRuleName: HTTP Redirect
+        enabled: 'true'
+        ipAddress: 1.1.1.1
+        name: HTTP-FRONTEND
+        port: '80'
+        protocol: http
+
+    -   accelerationEnabled: 'true'
+        applicationProfileName: TCP
+        poolName: HTTPS-POOL
+        enabled: 'true'
+        ipAddress: 1.1.1.1
+        name: HTTPS-FRONTEND
+        port: '443'
+        protocol: tcp
+
+    -   accelerationEnabled: 'true'
+        applicationProfileName: TCP
+        poolName: PROXY-POOL
+        enabled: 'true'
+        ipAddress: 1.1.1.1
+        name: PROXY-FRONTEND
+        port: '8080'
+        protocol: tcp   
+
