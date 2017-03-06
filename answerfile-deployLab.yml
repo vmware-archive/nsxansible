@@ -6,6 +6,10 @@ deployVcIPAddress: '172.17.100.130'
 deployVcUser: 'administrator@vsphere.local'
 deployVcPassword: 'vmware'
 
+# with NSX 6.2.2 and later you need licnse in order to prepare the hosts
+# Uncomment the line below and provide valid license key, otherwise the deployment will fail before preparing the clusters
+#license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+
 # NSX Manager OVA deployment parameters
 # this section holds all parameters needed to deploy the NSX Manager OVA like IP address, etc.
 deployMgmtPortGroup: 'vlan100'

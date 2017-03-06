@@ -34,6 +34,17 @@
   register: vcenter_mgmt_cluster_moid
   tags: vsphere_facts
 
+- name: Gather vCenter Cluster moid to deploy controllers
+  vcenter_gather_moids:
+    hostname: "{{ vcHostname }}"
+    username: "{{ vcUser }}"
+    password: "{{ vcPassword }}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    cluster_name: "{{ nsxControllerVcCluster }}"
+    validate_certs: False
+  register: vcenter_ctrl_cluster_moid
+  tags: vsphere_facts
+
 
 - name: Gather vCenter management datastore moid
   vcenter_gather_moids:
@@ -81,12 +92,21 @@
       deploytype: "{{ controllerDeployType }}"
       syslog_server: "{{ controllerSyslogServer }}"
       ippool_id: "{{ controller_ip_pool.ippool_id }}"
-      resourcepool_moid: "{{ vcenter_mgmt_cluster_moid.object_id }}"
+      resourcepool_moid: "{{ vcenter_ctrl_cluster_moid.object_id }}"
       datastore_moid: "{{ vcenter_mgmt_datastore_moid.object_id }}"
       network_moid: "{{ vcenter_mgmt_portgroup_moid.object_id }}"
       password: "{{ controllerPassword }}"
   tags: nsx_controllers
 
+- name: Apply NSX License
+  vcenter_nsx_license:
+    vcenter: "{{ vcHostname }}"
+    vcenter_user: "{{ vcUser }}"
+    vcenter_passwd: "{{ vcPassword }}"
+    license_key: "{{ license_key }}"
+  when: license_key is defined
+  register: nsxlic
+  tags: nsx_license
 
 - name: Gather vCenter compute Cluster moid
   vcenter_gather_moids:
