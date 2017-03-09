@@ -121,6 +121,7 @@ def main():
                                           '--powerOn',
                                           '--noSSLVerify',
                                           '--allowExtraConfig',
+                                          '--X:logFile={}'.format('/var/log/chaperone/nsx_ova_deploy.log'),
                                           '--diskMode={}'.format(module.params['disk_mode']),
                                           '--datastore={}'.format(module.params['datastore']),
                                           '--net:VSMgmt={}'.format(module.params['portgroup']),
