@@ -58,7 +58,7 @@ except ImportError:
     HAS_CLIENTS = False
 
 LOG = logging.getLogger(__name__)
-handler = logging.FileHandler('/var/log/chaperone/nsx_esg_fw.log')
+handler = logging.FileHandler('/var/log/chaperone/nsx_edge_fw.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 handler.setFormatter(formatter)
 LOG.addHandler(handler)
