@@ -19,9 +19,17 @@
 
 __author__ = 'yfauser'
 
+DOCUMENTATION = '''
+'''
 
-import requests
+EXAMPLE = '''
+'''
 
+try:
+    import requests
+    IMPORTS = True
+except ImportError:
+    IMPORTS = False
 
 def check_nsx_api(module):
     appliance_check_url = 'https://{}//api/2.0/services/vcconfig'.format(module.params['ip_address'])
@@ -50,6 +58,21 @@ def wait_for_api(module, sleep_time=15):
 
         if status_poll_count == 30:
             return False
+
+def delete_vm(vm):
+    changed, result = False, None
+
+    if vm.runtime.powerState == 'poweredOn':
+        power_off_task = vm.PowerOffVM_Task()
+        wait_for_task(power_off_task)
+
+    try:
+        delete_vm_task = vm.Destroy_Task()
+        changed, result = wait_for_task(delete_vm_task)
+    except Exception as e:
+        module.fail_json(msg="Failed deleting vm: {}".format(str(e)))
+
+    return changed, result
 
 
 def find_virtual_machine(content, searched_vm_name):
@@ -91,11 +114,14 @@ def main():
 
     module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
 
+    if not IMPORTS:
+        module.fail_json(msg="Failed Loading Required Modules")
+
     content = connect_to_api(module)
 
     nsx_manager_vm = find_virtual_machine(content, module.params['vmname'])
 
-    if nsx_manager_vm:
+    if nsx_manager_vm and module.params['state'] == 'present':
         api_status = check_nsx_api(module)
         if not api_status:
             module.fail_json(msg='A VM with the name {} was already present, but the '
@@ -105,6 +131,10 @@ def main():
                                  'was {} {}'.format(api_status[0], api_status[1]))
         else:
             module.exit_json(changed=False, nsx_manager_vm=str(nsx_manager_vm))
+
+    if nsx_manager_vm and module.params['state'] == 'absent':
+        changed, result = delete_vm(nsx_manager_vm)
+        module.exit_json(changed=changed, result=result)
 
     if module.check_mode:
         module.exit_json(changed=True)
@@ -121,7 +151,6 @@ def main():
                                           '--powerOn',
                                           '--noSSLVerify',
                                           '--allowExtraConfig',
-                                          '--X:logFile={}'.format('/var/log/chaperone/nsx_ova_deploy.log'),
                                           '--diskMode={}'.format(module.params['disk_mode']),
                                           '--datastore={}'.format(module.params['datastore']),
                                           '--net:VSMgmt={}'.format(module.params['portgroup']),
