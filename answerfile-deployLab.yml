@@ -89,6 +89,7 @@ segmentIdPoolEnd: '10000'
 mcastEnabled: 'True'
 mcastAddrStart: '239.0.0.0'
 mcastAddrEnd: '239.255.255.255'
+vtep_vlan_id: '0'
 
 # Target vCenter Cluster Section
 # the following section defines which clusters in the target vCenter should

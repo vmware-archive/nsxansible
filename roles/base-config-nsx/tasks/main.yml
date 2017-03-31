@@ -128,7 +128,7 @@
   register: cluster_prep_compute
   tags: nsx_cluster_prep
 
-- name: Gather vCenter compute Cluster moid
+- name: Gather vCenter Edge Cluster moid
   vcenter_gather_moids:
     hostname: "{{ vcHostname }}"
     username: "{{ vcUser }}"
@@ -183,17 +183,19 @@
     cluster_moid: "{{ vcenter_compute_cluster_moid.object_id }}"
     dvs_moid: "{{ vcenter_dvs_moid.object_id }}"
     ippool_id: "{{ vtep_ip_pool.ippool_id }}"
+    vlan_id: "{{ vtep_vlan_id }}"
   register: vxlan_prep
   tags: nsx_vxlan_prep
 
 
-- name: VXLAN Prep (configure VTEP) on mgmt cluster
+- name: VXLAN Prep (configure VTEP) on Egde cluster
   nsx_vxlan_prep:
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     state: present
-    cluster_moid: "{{ vcenter_mgmt_cluster_moid.object_id }}"
+    cluster_moid: "{{ vcenter_edge_cluster_moid.object_id }}"
     dvs_moid: "{{ vcenter_dvs_moid.object_id }}"
     ippool_id: "{{ vtep_ip_pool.ippool_id }}"
+    vlan_id: "{{ vtep_vlan_id }}"
   register: vxlan_prep
   tags: nsx_vxlan_prep
 
