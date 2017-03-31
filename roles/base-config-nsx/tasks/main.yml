@@ -128,13 +128,24 @@
   register: cluster_prep_compute
   tags: nsx_cluster_prep
 
+- name: Gather vCenter compute Cluster moid
+  vcenter_gather_moids:
+    hostname: "{{ vcHostname }}"
+    username: "{{ vcUser }}"
+    password: "{{ vcPassword }}"
+    datacenter_name: "{{ targetDatacenterName }}"
+    cluster_name: "{{ targetClusters.cluster2.clusterName }}"
+    validate_certs: False
+  register: vcenter_edge_cluster_moid
+  tags: vsphere_facts
 
-- name: Install VIBs (prepare) the mgmt and edge cluster
+
+- name: Install VIBs (prepare) the edge cluster
   nsx_cluster_prep:
     nsxmanager_spec: "{{ nsxmanager_spec }}"
     state: present
-    cluster_moid: "{{ vcenter_mgmt_cluster_moid.object_id }}"
-  register: cluster_prep_mgmt
+    cluster_moid: "{{ vcenter_edge_cluster_moid.object_id }}"
+  register: cluster_prep_edge
   tags: nsx_cluster_prep
 
 
@@ -208,7 +219,7 @@
     controlplanemode: "{{ defaultControllPlaneMode }}"
     description: "{{ transportZoneDescription }}"
     cluster_moid_list:
-      - "{{ vcenter_mgmt_cluster_moid.object_id }}"
+      - "{{ vcenter_edge_cluster_moid.object_id }}"
       - "{{ vcenter_compute_cluster_moid.object_id }}"
   register: transport_zone
   tags: nsx_transport_zone
