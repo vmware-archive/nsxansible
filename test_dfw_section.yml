@@ -1,0 +1,58 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - inventory-NetLab.yml
+  tasks:
+  - name: DFW section creation
+    nsx_dfw_section:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: False
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: 'present'
+      name: 'ansible_DFW_section'
+      section_type: 'L3'
+      rules:
+      - name: 'ansible_DFW_rule_1'
+        state: 'present'
+        disabled: 'false'
+        src_any: 'false'
+        src_excluded: 'false'
+        sources:
+          - {type: 'ipset', name: 'Node-PC-01', value: ''}
+        dest_any: 'false'
+        dest_excluded: 'false'
+        destinations:
+          - {type: 'vm', name: 'App-NSX-301', value: ''}
+          - {type: 'vm', name: 'DB-NSX-301'}
+        service_any: 'false'
+        services:
+          - {proto: 'TCP', destport: '7001', srcport: ''}
+          - {name: 'SSH'}
+        action: 'allow'
+        logged: 'true'
+        direction: 'inout'
+        pkt_type: 'any'
+        applyto: 'dfw'
+      - name: 'ansible_DFW_rule_2'
+        state: 'present'
+        disabled: 'false'
+        src_any: 'false'
+        src_excluded: 'false'
+        sources:
+          - {type: 'vm', name: 'Web-NSX-301'}
+        dest_any: 'false'
+        dest_excluded: 'false'
+        destinations:
+          - {type: 'vm', name: 'Web-NSX-302'}
+        service_any: 'true'
+        action: 'deny'
+        logged: 'true'
+        direction: 'inout'
+        pkt_type: 'any'
+        applyto: 'dfw'
+    register: create_dfw_section
+    tags: dfw_section_create

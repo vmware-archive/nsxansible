@@ -1013,6 +1013,138 @@ rules:
   - {learner: 'bgp', priority: 0, connected: true, prefix: 'testprfx1'}
 ```
 
+### Module `nsx_dfw_section`
+##### creates, updates or deletes DFW Section and included Rules in NSX. Requires vCenter access because Rules will lookup vCenter inventory for fulfilling specific Rule parameters. Depends on vmware/pynsxv package. 
+
+- hostname:
+Mandatory: The Hostname, FQDN or IP Address of your vCenter Server
+- username:
+Mandatory: The Username used to access you vCenter
+- password:
+Mandatory: The password of your vCenter users
+- validate_certs:
+Mandatory: 'False' when accept any certificate thumbprint of vCenter service
+- state:
+'present' or 'absent', default to 'present'
+- name:
+Mandatory: The unique name for target section
+- section_type:
+Mandatory: 'L2' for layer2 section, 'L3' for layer3 section or 'L3R' for layer3 redirection section
+- rules:
+Optional: A list of dictionaries containing firewall rules, See the rules details section for more information
+
+Example:
+```yml
+  - name: DFW section creation
+    nsx_dfw_section:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: False
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: 'present'
+      name: 'ansible_DFW_section'
+      section_type: 'L3'
+      rules:
+      - name: 'ansible_DFW_rule'
+        state: 'present'
+        disabled: 'false'
+        src_any: 'false'
+        src_excluded: 'false'
+        sources:
+          - {type: 'vm', name: 'Web01'}
+        dest_any: 'false'
+        dest_excluded: 'false'
+        destinations:
+          - {type: 'vm', name: 'Web02'}
+        service_any: 'true'
+        action: 'deny'
+        logged: 'true'
+        direction: 'inout'
+        pkt_type: 'any'
+        applyto: 'dfw'
+    register: create_dfw_section
+    tags: dfw_section_create
+```
+
+##### Rules list
+The rules variable holds a list of dictionaries with the following Key / Value pairs:
+
+- name:
+Mandatory: The unique name for each DFW rules contained in the Section
+- state:
+Mandatory: 'present' or 'absent'
+- disabled:
+Mandatory: 'true' if the rule should be marked as inactive
+- src_any:
+Mandatory: 'true' if any source should be matched to the rule
+- src_exclude:
+Optional: 'true' if the designated source should be excluded from match
+- sources:
+A list of dictionaries containing source definition, Mandatory if src_any is 'false', See the Sources/Destinations details section for more information
+- dest_any:
+Mandatory: 'true' if any destination should be matched to the rule
+- dest_exclude:
+Optional: 'true' if the designated destination should be excluded from match
+- destinations:
+A list of dictionaries containing destination definition, Mandatory if dest_any is 'false', See the Sources/Destinations details section for more information
+- service_any:
+Mandatory: 'true' if any service should be matched to the rule
+- services:
+A list of dictionaries containing service definition, Mandatory if service_any is 'false', See the Services details section for more information
+- action:
+Mandatory: The action to apply with this rule, can be 'allow', 'deny', 'block' or 'reject'
+- logged:
+Mandatory: 'true' or 'false'
+- direction:
+Mandatory: The direction that the rule is applied, 'in', 'our' or 'inout'
+- pkt_type:
+Mandatory: The packet type matches to the rule, can be 'any', 'ipv4' or 'ipv6'
+- apply_to:
+Mandatory: The entity that the rule should be applied, can be 'any', 'dfw' or 'edgegw'
+
+Example:
+```yml
+rules:
+  - name: 'ansible_DFW_rule_1'
+    state: 'present'
+    disabled: 'false'
+    src_any: 'false'
+    src_excluded: 'false'
+    sources:
+      - {type: 'ipset', name: 'Node01', value: ''}
+    dest_any: 'false'
+    dest_excluded: 'false'
+    destinations:
+      - {type: 'vm', name: 'App01', value: ''}
+      - {type: 'vm', name: 'DB01'}
+    service_any: 'false'
+    services:
+      - {proto: 'TCP', destport: '7001', srcport: ''}
+      - {name: 'SSH'}
+    action: 'allow'
+    logged: 'true'
+    direction: 'inout'
+    pkt_type: 'any'
+    applyto: 'dfw'
+```
+
+##### Sources/Destinations list
+The sources or destinations variable holds a list of dictionaries with the following Key / Value pairs: 
+TBD
+
+##### Services list
+The services variable holds a list of dictionaries with the following Key / Value pairs: 
+TBD
+
+### Module `nsx_dfw_rule`
+##### creates, updates or deletes DFW Rule in existing DFW Section in NSX. Requires vCenter access because Rules will lookup vCenter inventory for fulfilling specific Rule parameters. Depends on vmware/pynsxv package. 
+TBD
+
+### Module `simple_lb`
+##### creates, updates or deletes Load Balancer instance on existing ESG in NSX.  
+TBD
+
 ## Example Playbooks and roles
 ### As part of this repo you will find example playbooks and roles:
 

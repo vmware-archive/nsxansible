@@ -307,16 +307,17 @@ def params_check_routes(module):
     if not isinstance(routes, list):
         module.fail_json(msg='Malformed Routes List: The routes Information is not a list')
     for route in routes:
-        if not isinstance(route, dict):
-            module.fail_json(msg='Malformed Interface Dictionary: '
-                                 'The Interface {} Information is not a dictionary'.format(route))
-        network = route.get('network', None)
-        next_hop = route.get('next_hop', None)
-
-        if not (network and next_hop):
-            module.fail_json(msg='You are missing one of the following parameter '
-                                 'in the routes Dict: network or next_hop')
-
+        if isinstance(route, dict):
+#        if not isinstance(route, dict):
+#            module.fail_json(msg='Malformed Route Dictionary: '
+#                                 'The Interface {} Information is not a dictionary'.format(route))
+            network = route.get('network', None)
+            next_hop = route.get('next_hop', None)
+    
+            if not (network and next_hop):
+                module.fail_json(msg='You are missing one of the following parameter '
+                                     'in the routes Dict: network or next_hop')
+    
 
 def check_routes(client_session, esg_id, current_routes, module):
     changed = None
@@ -348,13 +349,15 @@ def check_routes(client_session, esg_id, current_routes, module):
         for route in current_routes:
             if route_desired['network'] == route['network'] and route_desired['next_hop'] == route['nextHop']:
                 break
+#        else:
         else:
-            admin_distance = route_desired.get('admin_distance', '1')
-            mtu = route_desired.get('mtu', '1500')
-            description = route_desired.get('description')
-            new_routes.append({'network': route_desired['network'], 'nextHop': route_desired['next_hop'],
-                               'adminDistance': admin_distance, 'mtu': mtu, 'description': description})
-            changed = True
+            if isinstance(route_desired, dict):
+                admin_distance = route_desired.get('admin_distance', '1')
+                mtu = route_desired.get('mtu', '1500')
+                description = route_desired.get('description')
+                new_routes.append({'network': route_desired['network'], 'nextHop': route_desired['next_hop'],
+                                   'adminDistance': admin_distance, 'mtu': mtu, 'description': description})
+                changed = True
 
     if changed:
         rtg_config = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']

@@ -1,0 +1,96 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - inventory-NetLab.yml
+  tasks:
+  - name: gather moid | default() for ds
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      datastore_name: "{{ vcenter_datastore }}"
+      validate_certs: False
+    register: gather_moids_ds
+    tags: moids
+  - name: gather moid | default() for cl
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      cluster_name: "{{ vcenter_edge_cluster }}"
+      validate_certs: False
+    register: gather_moids_cl
+    tags: moids
+  - name: gather moid | default() for mgmt portgroup
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      portgroup_name: "{{ vcenter_mgmt_pg }}"
+      validate_certs: False
+    register: gather_moids_pg
+    tags: moids
+  - name: gather moid | default() for ESG uplink portgroup
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      datacenter_name: "{{ vcenter_dc }}"
+      portgroup_name: "PG-Edge-Transit"
+      validate_certs: False
+    register: gather_moids_upl_pg
+    tags: moids
+  - name: ESGs creation
+    nsx_edge_router:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      name: 'ansible-Edge-LB-test'
+      description: 'ESG for LB for ansible test' 
+      state: 'present'
+      appliance_size: 'compact'
+      resourcepool_moid: "{{ gather_moids_cl.object_id | default() }}"
+      datastore_moid: "{{ gather_moids_ds.object_id | default() }}"
+      datacenter_moid: "{{ gather_moids_cl.datacenter_moid | default() }}"
+      interfaces:
+        vnic0: {name: 'test-Web-IF', iftype: 'uplink', ip: '192.168.1.100', prefix_len: 24, logical_switch: 'LS-Inst-Web', fence_param: 'ethernet0.filter1.param1=1'}
+      default_gateway: '192.168.1.254'
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+      firewall: 'false'
+      ha_enabled: 'false'
+    register: create_esg
+    tags: esg_create
+  - name: LBs creation
+    simple_load_balancer:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: 'present'
+      nsx_edge_gateway_name: 'ansible-Edge-LB-test'
+      app_profile_name_http: 'Profile-HTTP'
+      monitor_name: 'HTTP-Service-Monitor'
+      monitor_type: 'HTTP'
+      monitor_interval: 5
+      monitor_time_out: 15
+      monitor_retries: 3
+      monitor_url_method: 'GET'
+      monitor_url: '/'
+      http_pool_name: 'Pool-Web'
+      http_pool_first_member_name: 'Web-NSX-inst01'
+      http_pool_first_member_ip: '192.168.1.1'
+      http_pool_first_member_port: 80
+      http_pool_first_member_monitor_port: 80
+      http_pool_second_member_name: 'Web-NSX-inst02'
+      http_pool_second_member_ip: '192.168.1.2'
+      http_pool_second_member_port: 80
+      http_pool_second_member_monitor_port: 80
+      http_virtual_server_name: 'VirtualServer-Web'
+      virtual_ip_address: '192.168.1.100'
+      http_virtual_server_port: 80
+    register: create_lb
+    tags: lb_create
+
+#  - debug: msg="{{ gather_moids_cl }}"

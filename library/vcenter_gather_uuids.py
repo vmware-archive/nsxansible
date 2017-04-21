@@ -17,7 +17,7 @@
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-__author__ = 'yfauser'
+__author__ = 'ynakaoku'
 
 try:
     from pyVmomi import vim, vmodl
@@ -28,17 +28,17 @@ except ImportError:
 
 VIM_TYPES = {'datacenter': [vim.Datacenter],
              'dvs_name': [vim.dvs.VmwareDistributedVirtualSwitch],
-             'datastore_name': [vim.Datastore],
-             'resourcepool_name': [vim.ResourcePool],
-             'portgroup_name': [vim.dvs.DistributedVirtualPortgroup],
              'vm_name': [vim.VirtualMachine]}
 
 
-def get_mo(content, searchedname, vim_type_list):
+def get_uuid(content, searchedname, vim_type_list, instance_uuid_flag):
     mo = get_all_objs(content, vim_type_list)
     for object in mo:
-        if object.name == searchedname:
-            return object
+        if object.config.name == searchedname:
+            if instance_uuid_flag:
+                return object.config.instanceUuid
+            else:
+                return object.config.uuid
     return None
 
 def main():
@@ -48,19 +48,16 @@ def main():
     argument_spec.update(
         dict(
             datacenter_name=dict(required=True),
-            cluster_name=dict(type='str'),
-            resourcepool_name=dict(type='str'),
             dvs_name=dict(type='str'),
-            portgroup_name=dict(type='str'),
-            datastore_name=dict(type='str'),
-            vm_name=dict(type='str')
+            vm_name=dict(type='str'),
+            uuid_type=dict(type='str')
         )
     )
 
     module = AnsibleModule(
         argument_spec=argument_spec,
-        required_one_of=[['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name', 'vm_name']],
-        mutually_exclusive=[['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name', 'vm_name']],
+        required_one_of=[['dvs_name', 'vm_name']],
+        mutually_exclusive=[['dvs_name', 'vm_name']],
         supports_check_mode=False
     )
 
@@ -69,24 +66,19 @@ def main():
 
     content = connect_to_api(module)
 
-    searched_parameters = ['cluster_name', 'portgroup_name', 'resourcepool_name', 'dvs_name', 'datastore_name', 'vm_name']
+    searched_parameters = ['dvs_name', 'vm_name']
 
     datacenter_mo = find_datacenter_by_name(content, module.params['datacenter_name'])
     datacenter_moid =  datacenter_mo._moId
 
     for searched_parameter in searched_parameters:
-        if searched_parameter == 'cluster_name' and module.params[searched_parameter]:
-            object_mo = find_cluster_by_name_datacenter(datacenter_mo, module.params[searched_parameter])
-        elif searched_parameter == 'portgroup_name' and module.params[searched_parameter]:
-            object_mo = get_mo(content, module.params[searched_parameter], VIM_TYPES[searched_parameter])
-	    if object_mo is None:
-		object_mo = get_mo(content, module.params[searched_parameter], [vim.Network])
-        elif searched_parameter and module.params[searched_parameter]:
-            object_mo = get_mo(content, module.params[searched_parameter], VIM_TYPES[searched_parameter])
+        if searched_parameter and module.params[searched_parameter]:
+            if module.params['uuid_type'] == 'instance':
+                uuid = get_uuid(content, module.params[searched_parameter], VIM_TYPES[searched_parameter], True)
+            else:
+                uuid = get_uuid(content, module.params[searched_parameter], VIM_TYPES[searched_parameter], False)
 
-    object_id = object_mo._moId
-
-    module.exit_json(changed=False, object_id=object_id, datacenter_moid=datacenter_moid)
+    module.exit_json(changed=False, uuid=uuid, datacenter_moid=datacenter_moid)
 
 from ansible.module_utils.basic import *
 from ansible.module_utils.vmware import *

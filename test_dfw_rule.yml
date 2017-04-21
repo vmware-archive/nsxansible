@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - inventory-NetLab.yml
+  tasks:
+  - name: DFW rule creation
+    nsx_dfw_rule:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pwd }}"
+      validate_certs: False
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      name: 'ansible_DFW_rule_3'
+      section: 'ansible_DFW_section'
+      state: 'present'
+      disabled: 'false'
+      src_any: 'true'
+      src_excluded: 'false'
+      dest_any: 'false'
+      dest_excluded: 'false'
+      destinations:
+        - {type: 'vm', name: 'DB-NSX-301'}
+      service_any: 'true'
+      action: 'deny'
+      logged: 'true'
+      direction: 'inout'
+      pkt_type: 'any'
+      applyto: 'dfw'
+    register: create_dfw_rule
+    tags: dfw_rule_create
+
+#  - debug: msg="{{ gather_moids_cl }}"
