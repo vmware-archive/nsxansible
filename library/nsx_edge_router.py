@@ -196,12 +196,12 @@ def params_check_ifaces(module):
                                  'The Interface {} Information is not a dictionary'.format(iface_key))
         ip = iface.get('ip', None)
         pfx_len = iface.get('prefix_len', None)
-        if_type = iface.get('iftype', None)
+        if_type = iface.get('if_type', None)
         lswitch = iface.get('logical_switch', None)
         portgroupid = iface.get('portgroup_id', None)
         if not (ip and pfx_len and if_type):
             module.fail_json(msg='You are missing one of the following parameter '
-                                 'in the Interface Dict: ip or pfx_len or if_type')
+                                 'in the Interface Dict: ip or prefix_len or if_type')
         if not (lswitch or portgroupid):
             module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
                                  'parameters on {}'.format(iface_key))
