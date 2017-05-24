@@ -115,7 +115,7 @@ def create_init_ifaces(client_session, module):
             fence_key, fence_val = iface['fence_param'].split('=')
             fence_param = {'key': fence_key,'value': fence_val}
 
-        vnics_info.append({'name': iface['name'], 'index': iface_index, 'isConnected': 'true', 'type': iface['iftype'],
+        vnics_info.append({'name': iface['name'], 'index': iface_index, 'isConnected': 'true', 'type': iface['if_type'],
                            'portgroupId': portgroup_id, 'fenceParameter': fence_param,
                            'addressGroups': {'addressGroup': {'primaryAddress': iface['ip'],
                                                               'subnetPrefixLength': iface['prefix_len']}
@@ -247,8 +247,8 @@ def check_interfaces(client_session, esg_id, module):
             vnic['name'] = ifaces[idx]['name']
             vnic_changed = True
 
-        if vnic['type'] != ifaces[idx]['iftype']:
-            vnic['type'] = ifaces[idx]['iftype']
+        if vnic['type'] != ifaces[idx]['if_type']:
+            vnic['type'] = ifaces[idx]['if_type']
             vnic_changed = True
 
         if 'portgroup_id' in ifaces[idx]:
