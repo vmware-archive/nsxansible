@@ -115,7 +115,7 @@ def create_init_ifaces(client_session, module):
             fence_key, fence_val = iface['fence_param'].split('=')
             fence_param = {'key': fence_key,'value': fence_val}
 
-        vnics_info.append({'name': iface['name'], 'index': iface_index, 'isConnected': 'true', 'type': iface['iftype'],
+        vnics_info.append({'name': iface['name'], 'index': iface_index, 'isConnected': 'true', 'type': iface['if_type'],
                            'portgroupId': portgroup_id, 'fenceParameter': fence_param,
                            'addressGroups': {'addressGroup': {'primaryAddress': iface['ip'],
                                                               'subnetPrefixLength': iface['prefix_len']}
@@ -196,12 +196,12 @@ def params_check_ifaces(module):
                                  'The Interface {} Information is not a dictionary'.format(iface_key))
         ip = iface.get('ip', None)
         pfx_len = iface.get('prefix_len', None)
-        if_type = iface.get('iftype', None)
+        if_type = iface.get('if_type', None)
         lswitch = iface.get('logical_switch', None)
         portgroupid = iface.get('portgroup_id', None)
         if not (ip and pfx_len and if_type):
             module.fail_json(msg='You are missing one of the following parameter '
-                                 'in the Interface Dict: ip or pfx_len or if_type')
+                                 'in the Interface Dict: ip or prefix_len or if_type')
         if not (lswitch or portgroupid):
             module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
                                  'parameters on {}'.format(iface_key))
@@ -247,8 +247,8 @@ def check_interfaces(client_session, esg_id, module):
             vnic['name'] = ifaces[idx]['name']
             vnic_changed = True
 
-        if vnic['type'] != ifaces[idx]['iftype']:
-            vnic['type'] = ifaces[idx]['iftype']
+        if vnic['type'] != ifaces[idx]['if_type']:
+            vnic['type'] = ifaces[idx]['if_type']
             vnic_changed = True
 
         if 'portgroup_id' in ifaces[idx]:
