@@ -779,7 +779,10 @@ def dfw_rule_construct(client_session, params, vccontent=None):
 
         # If the destination value is "any" the section needs to be deleted
         if params['dest_any'] == 'true':
-            del rule_schema['rule']['destinations']
+            try:
+                del rule_schema['rule']['destinations']
+            except:
+                pass
         else:
           # Mandatory values of a destination ( NB: destination is an optional value )
           new_items = []
@@ -795,10 +798,10 @@ def dfw_rule_construct(client_session, params, vccontent=None):
                 return False, msg
               new_items.append({"value": rule_dest_value, "type": API_TYPES[item['type']]})
 
-          rule_schema['rule']['destinations']['destination'] = new_items
+          rule_schema['rule'].update({'destinations':{'destination':new_items}})
           # Optional values of a destination ( if specified )
           if params['dest_excluded'] != '':
-            rule_schema['rule']['destinations']['@excluded'] = params['dest_excluded']
+            rule_schema['rule']['destinations'].update({'@excluded':params['dest_excluded']})
 
         # If the service is "any" the section needs to be deleted
         if params['service_any'] == 'true':
@@ -823,7 +826,7 @@ def dfw_rule_construct(client_session, params, vccontent=None):
             if item['name'] != '':
               new_item.update({"value": ''})
               # Mandatory values of a service specified via application/application group (service is an optional value)
-              services = client_session.read('servicesScope', uri_parameters={'scopeId': 'globalroot-0'})
+              services = client_session.read('servicesAppsScopeScope', uri_parameters={'scopeId': 'globalroot-0'})
               service = services.items()[1][1]['list']['application']
               for servicedict in service:
                 if str(servicedict['name']) == item['name']:
