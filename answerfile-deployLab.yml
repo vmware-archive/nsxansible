@@ -3,13 +3,18 @@
 # were the NSX Manager OVA gets deployed. This can be a separate management vCenter,
 # or the same vCenter to which NSX Manager gets registered
 deployVcIPAddress: 'vcsa-01a.corp.local'
-deployVcUser: 'administrator@corp.local'
+deployVcUser: 'administrator@vsphere.local'
 deployVcPassword: 'VMware1!'
 
 # with NSX 6.2.2 and later you need licnse in order to prepare the hosts
 # Uncomment the line below and provide valid license key, otherwise the deployment will fail before preparing the clusters
-#license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-
+license_key: !vault |
+             $ANSIBLE_VAULT;1.1;AES256
+             62666334653730613865616437626236366134396431633665663839613862383233613539373132
+             3961633365306532313338383835313536323833326266360a313461653266303335636330376136
+             66333034396132323362653862323861353564373931346165356639626439306134663464303364
+             3033393235333237660a363835303339343666396138343236306336336336383234346435383036
+             61366363306439333563353665393539333535376261613031396235646632393436
 # NSX Manager OVA deployment parameters
 # this section holds all parameters needed to deploy the NSX Manager OVA like IP address, etc.
 deployMgmtPortGroup: 'ESXi-RegionA01-vDS-COMP'
@@ -29,7 +34,7 @@ nsxCliPass: 'VMware1!'
 nsxEnPass: 'VMware1!'
 
 nsxmanOvaPath: '/home/localadmin/OVAs'
-nsxmanOva: 'VMware-NSX-Manager-6.3.2-5599280.ova'
+nsxmanOva: 'VMware-NSX-Manager-6.3.1-5124716.ova'
 ovfToolPath: '/usr/bin'  # Use '/Applications' if using ovftool on a MAC
 
 # Target 'register' vCenter section
@@ -38,10 +43,10 @@ ovfToolPath: '/usr/bin'  # Use '/Applications' if using ovftool on a MAC
 # or a separate 'payload' vCenter
 vcHostname: "vcsa-01a.corp.local"
 vcIpAddress: "192.168.110.22"
-vcUser: "administrator@corp.local"
+vcUser: "administrator@vsphere.local"
 vcPassword: "VMware1!"
 vcSsoHostname: "vcsa-01a.corp.local"
-vcSsoUser: "administrator@corp.local"
+vcSsoUser: "administrator@vsphere.local"
 vcSsoPassword: "VMware1!"
 
 # NSX Manager credentials and RAML file path
