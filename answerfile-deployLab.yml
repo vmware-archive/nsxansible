@@ -6,6 +6,10 @@ deployVcIPAddress: 'vcsa-01a.corp.local'
 deployVcUser: 'administrator@corp.local'
 deployVcPassword: 'VMware1!'
 
+# with NSX 6.2.2 and later you need licnse in order to prepare the hosts
+# Uncomment the line below and provide valid license key, otherwise the deployment will fail before preparing the clusters
+#license_key: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+
 # NSX Manager OVA deployment parameters
 # this section holds all parameters needed to deploy the NSX Manager OVA like IP address, etc.
 deployMgmtPortGroup: 'ESXi-RegionA01-vDS-COMP'
@@ -85,6 +89,7 @@ segmentIdPoolEnd: '10000'
 mcastEnabled: 'True'
 mcastAddrStart: '239.0.0.0'
 mcastAddrEnd: '239.255.255.255'
+vtep_vlan_id: '0'
 
 # Target vCenter Cluster Section
 # the following section defines which clusters in the target vCenter should

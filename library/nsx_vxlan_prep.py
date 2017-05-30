@@ -91,7 +91,7 @@ def main():
             cluster_moid=dict(required=True),
             dvs_moid=dict(required=True),
             ippool_id=dict(),
-            vlan_id=dict(default=0),
+            vlan_id=dict(default=0, type='int'),
             vmknic_count=dict(default=1),
             teaming=dict(default='FAILOVER_ORDER', choices=['FAILOVER_ORDER',
                                                             'ETHER_CHANNEL',
