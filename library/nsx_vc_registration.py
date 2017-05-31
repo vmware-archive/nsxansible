@@ -50,7 +50,7 @@ def main():
 
     vc_config = retrieve_vc_config(s)
 
-    api_cert = ssl.get_server_certificate((module.params['vcenter'], 9443),
+    api_cert = ssl.get_server_certificate((module.params['vcenter'], 443),
                                           ssl_version=2)
     x509_api = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, api_cert)
     api_cert_thumbp = x509_api.digest('sha1')
