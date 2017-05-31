@@ -35,17 +35,17 @@ def retrieve_scope(session, tz_name):
 
 def get_vdnscope_properties(session, vdn_scope):
     vdnscope_properties = {'name': None, 'description': None, 'controlplanemode': None, 'cluster_moid_list': []}
-    vdn_scope_content = session.read('vdnScope', uri_parameters={'scopeId': vdn_scope})['body']
+    vdn_scope_content = session.read('vdnScope', uri_parameters={'scopeId': vdn_scope})['body']['vdnScope']
 
-    vdnscope_properties['name'] = vdn_scope_content['vdnScope']['name']
-    vdnscope_properties['description'] = vdn_scope_content['vdnScope']['description']
-    vdnscope_properties['controlplanemode'] = vdn_scope_content['vdnScope']['controlPlaneMode']
+    vdnscope_properties['name'] = vdn_scope_content.get('name')
+    vdnscope_properties['description'] = vdn_scope_content.get('description')
+    vdnscope_properties['controlplanemode'] = vdn_scope_content.get('controlPlaneMode')
 
-    if isinstance(vdn_scope_content['vdnScope']['clusters']['cluster'], dict):
-        single_cluster_moid = vdn_scope_content['vdnScope']['clusters']['cluster']['cluster']['objectId']
+    if isinstance(vdn_scope_content['clusters']['cluster'], dict):
+        single_cluster_moid = vdn_scope_content['clusters']['cluster']['cluster']['objectId']
         vdnscope_properties['cluster_moid_list'].append(single_cluster_moid)
-    elif isinstance(vdn_scope_content['vdnScope']['clusters']['cluster'], list):
-        for cluster in vdn_scope_content['vdnScope']['clusters']['cluster']:
+    elif isinstance(vdn_scope_content['clusters']['cluster'], list):
+        for cluster in vdn_scope_content['clusters']['cluster']:
             vdnscope_properties['cluster_moid_list'].append(cluster['cluster']['objectId'])
 
     return vdnscope_properties
