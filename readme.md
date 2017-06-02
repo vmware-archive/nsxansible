@@ -118,6 +118,40 @@ Example:
   #- debug: var=create_logical_switch
 ```
 
+###  Module `vcenter_nsx_license`
+##### Adds a license key to the vCenter license manager and applies it to NSX
+
+- vcenter:
+Mandatory: Hostname or IP address of the vCenter server
+- vcusername:
+Mandatory: Username on the vCenter
+- vcpassword:
+Mandatory: Password of the vCenter
+- license_key:
+Mandatory: License to be added and attached to NSX
+
+Example:
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab_deploy.yml
+  tasks:
+  - name: Apply NSX License
+    vcenter_nsx_license:
+      vcenter: "{{ vcHostname }}"
+      vcenter_user: "{{ vcUser }}"
+      vcenter_passwd: '"{{ vcPassword }}"'
+      license_key: "L029P-JLL8K-28089-0UCK6-1TCH1"
+      # Note: The above license is an old time bombed license. Don't apply it to production!
+    register: nsxlic
+    tags: nsx_license
+
+  - debug: msg="{{ nsxlic }}"
+```
+
 ###  Module `nsx_vc_registration`
 ##### Registers NSX Manager to VC or changes the registration
 
