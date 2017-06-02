@@ -730,7 +730,7 @@ Sub-Directory:
 Mandatory: The IP Address of the vnic
 - prefix_len:
 Mandatory: The prefix length for the IP on the vnic, e.g. 24 for a /24 (255.255.255.0)
-- if_type:
+- iftype:
 Mandatory: The interface type, either 'uplink' or 'internal'
 - logical_switch:
 Optional: The logical switch id to attach the ESG vnic to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
@@ -839,7 +839,7 @@ Each interface passed to the module in the interfaces list variable is defined a
 Mandatory: The IP Address of the interface
 - prefix_len:
 Mandatory: The prefix length for the IP on the interface, e.g. 24 for a /24 (255.255.255.0)
-- if_type:
+- iftype:
 Mandatory: The interface type, either 'uplink' or 'internal'
 - logical_switch:
 Optional: The logical switch id to attach the DLR Interface to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
