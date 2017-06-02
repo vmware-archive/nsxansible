@@ -900,6 +900,8 @@ Optional: Log level for OSPF state changes, choices=['debug', 'info', 'notice', 
 Optional: A list of Dictionaries with Areas, See the Area details section for more information
 - area_map:
 Optional: A list of Dictionaries with Area to interface mappings, See the area_map details section for more information
+- ecmp:
+Optional: true / false, switches on or off ECMP support on the Edge Gateway
 
 Example:
 ```yml
