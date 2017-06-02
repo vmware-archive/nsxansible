@@ -19,13 +19,17 @@
 
 __author__ = 'yfauser'
 
+DOCUMENTATION = '''
+'''
 
-from pyVim import connect
-from pyVmomi import vim
-import requests
-import ssl
-import atexit
+EXAMPLE = '''
+'''
 
+try:
+    import requests
+    IMPORTS = True
+except ImportError:
+    IMPORTS = False
 
 def check_nsx_api(module):
     appliance_check_url = 'https://{}//api/2.0/services/vcconfig'.format(module.params['ip_address'])
@@ -55,6 +59,21 @@ def wait_for_api(module, sleep_time=15):
         if status_poll_count == 30:
             return False
 
+def delete_vm(vm):
+    changed, result = False, None
+
+    if vm.runtime.powerState == 'poweredOn':
+        power_off_task = vm.PowerOffVM_Task()
+        wait_for_task(power_off_task)
+
+    try:
+        delete_vm_task = vm.Destroy_Task()
+        changed, result = wait_for_task(delete_vm_task)
+    except Exception as e:
+        module.fail_json(msg="Failed deleting vm: {}".format(str(e)))
+
+    return changed, result
+
 
 def find_virtual_machine(content, searched_vm_name):
     virtual_machines = get_all_objs(content, [vim.VirtualMachine])
@@ -64,40 +83,20 @@ def find_virtual_machine(content, searched_vm_name):
     return None
 
 
-def get_all_objs(content, vimtype):
-    obj = {}
-    container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
-    for managed_object_ref in container.view:
-        obj.update({managed_object_ref: managed_object_ref.name})
-    return obj
-
-
-def connect_to_api(vchost, vc_user, vc_pwd):
-    if hasattr(ssl, 'SSLContext'):
-        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        context.verify_mode = ssl.CERT_NONE
-    else:
-        context = None
-    if context:
-        service_instance = connect.SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd, sslContext=context)
-    else:
-        service_instance = connect.SmartConnect(host=vchost, user=vc_user, pwd=vc_pwd)
-
-    atexit.register(connect.Disconnect, service_instance)
-
-    return service_instance.RetrieveContent()
-
 
 def main():
-    module = AnsibleModule(
-        argument_spec=dict(
+
+    argument_spec = vmware_argument_spec()
+
+    argument_spec.update(
+        dict(
             ovftool_path=dict(required=True, type='str'),
             datacenter=dict(required=True, type='str'),
             datastore=dict(required=True, type='str'),
             portgroup=dict(required=True, type='str'),
             cluster=dict(required=True, type='str'),
             vmname=dict(required=True, type='str'),
-            hostname=dict(required=True, type='str'),
+            nsxhostname=dict(required=True, type='str'),
             dns_server=dict(required=True, type='str'),
             ntp_server=dict(required=True, type='str'),
             dns_domain=dict(required=True, type='str'),
@@ -109,24 +108,20 @@ def main():
             path_to_ova=dict(required=True, type='str'),
             ova_file=dict(required=True, type='str'),
             disk_mode=dict(default='thin'),
-            vcenter=dict(required=True, type='str'),
-            vcenter_user=dict(required=True, type='str'),
-            vcenter_passwd=dict(required=True, type='str', no_log=True)
-        ),
-        supports_check_mode=True
+            state=dict(default='present', choices=['present', 'absent']),
+        )
     )
 
-    try:
-        content = connect_to_api(module.params['vcenter'], module.params['vcenter_user'],
-                                 module.params['vcenter_passwd'])
-    except vim.fault.InvalidLogin:
-        module.fail_json(msg='exception while connecting to vCenter, login failure, check username and password')
-    except requests.exceptions.ConnectionError:
-        module.fail_json(msg='exception while connecting to vCenter, check hostname, FQDN or IP')
+    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+
+    if not IMPORTS:
+        module.fail_json(msg="Failed Loading Required Modules")
+
+    content = connect_to_api(module)
 
     nsx_manager_vm = find_virtual_machine(content, module.params['vmname'])
 
-    if nsx_manager_vm:
+    if nsx_manager_vm and module.params['state'] == 'present':
         api_status = check_nsx_api(module)
         if not api_status:
             module.fail_json(msg='A VM with the name {} was already present, but the '
@@ -137,22 +132,31 @@ def main():
         else:
             module.exit_json(changed=False, nsx_manager_vm=str(nsx_manager_vm))
 
+    if nsx_manager_vm and module.params['state'] == 'absent':
+        changed, result = delete_vm(nsx_manager_vm)
+        module.exit_json(changed=changed, result=result)
+
     if module.check_mode:
         module.exit_json(changed=True)
 
     ovftool_exec = '{}/ovftool'.format(module.params['ovftool_path'])
     ova_file = '{}/{}'.format(module.params['path_to_ova'], module.params['ova_file'])
-    vi_string = 'vi://{}:{}@{}/{}/host/{}/'.format(module.params['vcenter_user'],
-                                                   module.params['vcenter_passwd'], module.params['vcenter'],
+    vi_string = 'vi://{}:{}@{}/{}/host/{}/'.format(module.params['username'],
+                                                   module.params['password'], module.params['hostname'],
                                                    module.params['datacenter'], module.params['cluster'])
 
-    ova_tool_result = module.run_command([ovftool_exec, '--acceptAllEulas', '--skipManifestCheck',
-                                          '--powerOn', '--noSSLVerify', '--allowExtraConfig',
+    ova_tool_result = module.run_command([ovftool_exec,
+                                          '--acceptAllEulas',
+                                          '--skipManifestCheck',
+                                          '--powerOn',
+                                          '--noSSLVerify',
+                                          '--allowExtraConfig',
                                           '--diskMode={}'.format(module.params['disk_mode']),
                                           '--datastore={}'.format(module.params['datastore']),
                                           '--net:VSMgmt={}'.format(module.params['portgroup']),
                                           '--name={}'.format(module.params['vmname']),
-                                          '--prop:vsm_hostname={}'.format(module.params['hostname']),
+                                          '--prop:vsm_hostname={}'.format(module.params['nsxhostname']),
+                                          '--prop:vsm_isSSHEnabled={}'.format(True),
                                           '--prop:vsm_dns1_0={}'.format(module.params['dns_server']),
                                           '--prop:vsm_domain_0={}'.format(module.params['dns_domain']),
                                           '--prop:vsm_ntp_0={}'.format(module.params['ntp_server']),
@@ -161,7 +165,8 @@ def main():
                                           '--prop:vsm_netmask_0={}'.format(module.params['netmask']),
                                           '--prop:vsm_cli_passwd_0={}'.format(module.params['admin_password']),
                                           '--prop:vsm_cli_en_passwd_0={}'.format(module.params['enable_password']),
-                                          ova_file, vi_string])
+                                          ova_file,
+                                          vi_string])
 
     if ova_tool_result[0] != 0:
         module.fail_json(msg='Failed to deploy OVA, error message from ovftool is: {}'.format(ova_tool_result[1]))
@@ -171,6 +176,7 @@ def main():
     module.exit_json(changed=True, ova_tool_result=ova_tool_result)
 
 from ansible.module_utils.basic import *
+from ansible.module_utils.vmware import *
 
 if __name__ == '__main__':
     main()
