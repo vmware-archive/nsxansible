@@ -30,7 +30,7 @@ VIM_TYPES = {'datacenter': [vim.Datacenter],
              'dvs_name': [vim.dvs.VmwareDistributedVirtualSwitch],
              'datastore_name': [vim.Datastore],
              'resourcepool_name': [vim.ResourcePool],
-             'portgroup_name': [vim.dvs.DistributedVirtualPortgroup]}
+             'portgroup_name': [vim.dvs.DistributedVirtualPortgroup, vim.Network]}
 
 
 def get_mo(content, searchedname, vim_type_list):
@@ -72,15 +72,16 @@ def main():
     datacenter_mo = find_datacenter_by_name(content, module.params['datacenter_name'])
     datacenter_moid =  datacenter_mo._moId
 
+    object_mo = None
+
     for searched_parameter in searched_parameters:
         if searched_parameter == 'cluster_name' and module.params[searched_parameter]:
             object_mo = find_cluster_by_name_datacenter(datacenter_mo, module.params[searched_parameter])
-        elif searched_parameter == 'portgroup_name' and module.params[searched_parameter]:
-            object_mo = get_mo(content, module.params[searched_parameter], VIM_TYPES[searched_parameter])
-	    if object_mo is None:
-		object_mo = get_mo(content, module.params[searched_parameter], [vim.Network])
         elif searched_parameter and module.params[searched_parameter]:
             object_mo = get_mo(content, module.params[searched_parameter], VIM_TYPES[searched_parameter])
+
+        if not object_mo and module.params[searched_parameter]:
+            module.fail_json(msg='Could not find {} in vCenter'.format(module.params[searched_parameter]))
 
     object_id = object_mo._moId
 
