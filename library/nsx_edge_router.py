@@ -201,7 +201,7 @@ def params_check_ifaces(module):
         portgroupid = iface.get('portgroup_id', None)
         if not (ip and pfx_len and if_type):
             module.fail_json(msg='You are missing one of the following parameter '
-                                 'in the Interface Dict: ip or pfx_len or iftype')
+                                 'in the Interface Dict: ip or prefix_len or iftype')
         if not (lswitch or portgroupid):
             module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
                                  'parameters on {}'.format(iface_key))
