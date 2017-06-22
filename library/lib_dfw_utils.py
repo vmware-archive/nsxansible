@@ -18,6 +18,7 @@
 # IN THE SOFTWARE.
 
 from pynsxv.library.libutils import nametovalue, dfw_rule_list_helper, get_ipsets, get_macsets, get_secgroups
+from nsxramlclient.xmloperations import dict_to_xml
 
 def dfw_section_list(client_session):
     """
@@ -170,6 +171,8 @@ def dfw_section_create(client_session, dfw_section_name, dfw_section_type, rules
 
     # Check for duplicate sections of the same type as the one that will be created, create and return
 
+    write_schema(section_schema, dfw_section_name)
+
     try:
         if dfw_section_type == 'dfwL2Section':
             section = client_session.create(dfw_section_type, request_body_dict=section_schema)
@@ -235,17 +238,19 @@ def dfw_section_update(client_session, dfw_section_id, dfw_section_name, dfw_sec
 
     # Check for duplicate sections of the same type as the one that will be created, create and return
 
+    write_schema(section_schema, dfw_section_name)
+
     try:
         if dfw_section_type == 'dfwL2SectionId':
             section = client_session.read(dfw_section_type, uri_parameters={'sectionId': dfw_section_id})
             etag = section.items()[-1][1]
-            section = client_session.update(dfw_section_typ, uri_parameters={'sectionId': dfw_section_id}, request_body_dict=section_schema, additional_headers={'If-match': etag})
+            section = client_session.update(dfw_section_type, uri_parameters={'sectionId': dfw_section_id}, request_body_dict=section_schema, additional_headers={'If-Match': etag})
             return section
     
         elif dfw_section_type == 'dfwL3SectionId':
             section = client_session.read(dfw_section_type, uri_parameters={'sectionId': dfw_section_id})
             etag = section.items()[-1][1]
-            section = client_session.update(dfw_section_type, uri_parameters={'sectionId': dfw_section_id}, request_body_dict=section_schema, additional_headers={'If-match': etag})
+            section = client_session.update(dfw_section_type, uri_parameters={'sectionId': dfw_section_id}, request_body_dict=section_schema, additional_headers={'If-Match': etag})
             return section
     
 #        if dfw_section_type == 'layer3RedirectSections':
@@ -846,4 +851,20 @@ def dfw_rule_construct(client_session, params, vccontent=None):
           rule_schema['rule']['services']['service'] = new_items
 
     return rule_schema
+
+def write_schema(schema, fid):
+    """
+    This function converts dict type request body to XML and write it to specific file
+    :param schema: Dict type schema created for sending to nsxramlclient
+    :param fid: string for indetify the output file
+    """
+    from time import time
+    now = time()
+
+    TEMP_FILE = '/tmp/nsx_request_body_%s_%s.xml' % (fid, str(int(now)) )
+    request_body = dict_to_xml(schema)
+
+    f = open(TEMP_FILE, 'w')
+    f.write(request_body)
+    f.close()
 
