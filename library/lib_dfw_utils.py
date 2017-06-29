@@ -169,9 +169,11 @@ def dfw_section_create(client_session, dfw_section_name, dfw_section_type, rules
         for params in rules_schema:
             section_schema['section']['rule'].append(params['rule'])
 
-    # Check for duplicate sections of the same type as the one that will be created, create and return
+    # Convert section schema to XML and write to temporary directory.
+    # Please uncoment when enable.
+#    write_schema(section_schema, dfw_section_name)
 
-    write_schema(section_schema, dfw_section_name)
+    # Check for duplicate sections of the same type as the one that will be created, create and return
 
     try:
         if dfw_section_type == 'dfwL2Section':
@@ -236,9 +238,11 @@ def dfw_section_update(client_session, dfw_section_id, dfw_section_name, dfw_sec
         for params in rules_schema:
             section_schema['section']['rule'].append(params['rule'])
 
-    # Check for duplicate sections of the same type as the one that will be created, create and return
+    # Convert section schema to XML and write to temporary directory.
+    # Please uncoment when enable.
+#    write_schema(section_schema, dfw_section_name)
 
-    write_schema(section_schema, dfw_section_name)
+    # Check for duplicate sections of the same type as the one that will be created, create and return
 
     try:
         if dfw_section_type == 'dfwL2SectionId':
