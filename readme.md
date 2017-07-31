@@ -677,6 +677,8 @@ Mandatory: The vCenter MOID of the datacenter to deploy the ESG in
 Mandatory: A dictionary that holds the configuration of each vnic as a sub-dictionary. See the interfaces details section for more information
 - default_gateway:
 Optional: The IP Address of the default gateway
+- default_gateway_adminDistance:
+Optional: The Admin Distance for the default gateway
 - routes:
 Optional: A list of dictionaries holding static route configurations. See the route details section for more information
 - username:
@@ -707,6 +709,7 @@ Example:
         vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
         vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'transit_net', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
       default_gateway: '10.114.209.65'
+      # default_gateway_adminDistance: 5
       routes:
         - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
         - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
@@ -789,6 +792,8 @@ Mandatory: The vCenter MOID of the portgroup used for the HA network and control
 Mandatory: A list that holds the configuration of each interface as a dictionary. See the interfaces details section for more information
 - default_gateway:
 Optional: The IP Address of the default gateway
+- default_gateway_adminDistance:
+Optional: The Admin Distance for the default gateway
 - routes:
 Optional: A list of dictionaries holding static route configurations. See the route details section for more information
 - username:
@@ -824,6 +829,7 @@ Example:
         - {network: '10.11.24.0/24', next_hop: '172.16.4.2'}
         - {network: '10.11.25.0/24', next_hop: '172.16.4.2'}
       default_gateway: '192.168.178.1'
+      # default_gateway_adminDistance: 5
       remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'

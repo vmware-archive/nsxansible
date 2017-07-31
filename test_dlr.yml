@@ -12,6 +12,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       datastore_name: "{{ vcenter_datastore }}"
+      validate_certs: False
     register: gather_moids_ds
     tags: dlr_create
   - name: gather moid for cl
@@ -21,6 +22,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       cluster_name: "{{ vcenter_edge_cluster }}"
+      validate_certs: False
     register: gather_moids_cl
     tags: dlr_create
   - name: gather moid for mgmt portgroup
@@ -30,6 +32,7 @@
       password: "{{ vcenter_pwd }}"
       datacenter_name: "{{ vcenter_dc }}"
       portgroup_name: 'vlan45'
+      validate_certs: False
     register: gather_moids_pg
     tags: dlr_create
 
@@ -53,6 +56,7 @@
         - {network: '10.11.24.0/24', next_hop: '172.16.4.2'}
         - {network: '10.11.25.0/24', next_hop: '172.16.4.2'}
       default_gateway: '192.168.178.1'
+      # default_gateway_adminDistance: 5
       remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
@@ -75,6 +79,6 @@
       interfaces: []
     register: delete_dlr
     tags: dlr_delete
-    
+
   - debug: var=delete_dlr
     tags: debug
