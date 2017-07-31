@@ -154,7 +154,8 @@ def config_def_gw(client_session, esg_id, dfgw, dfgw_adminDistance):
             rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
             rtg_cfg['staticRouting']['defaultRoute']['adminDistance'] = dfgw_adminDistance
         except KeyError:
-            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': dfgw_adminDistance, 'mtu': '1500'}
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': dfgw_adminDistance,
+                                                        'mtu': '1500'}
     else:
         rtg_cfg['staticRouting']['defaultRoute'] = None
 
@@ -428,11 +429,13 @@ def main():
         changed = True
 
     if module.params['default_gateway']:
-        if current_dfgw != (module.params['default_gateway'])  or (current_dfgw_adminDistance != module.params['default_gateway_adminDistance']):
-            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'], module.params['default_gateway_adminDistance'])
+        if current_dfgw != (module.params['default_gateway']) or \
+                (current_dfgw_adminDistance != module.params['default_gateway_adminDistance']):
+            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'],
+                                    module.params['default_gateway_adminDistance'])
     else:
         if current_dfgw:
-            changed = config_def_gw(client_session, edge_id, None)
+            changed = config_def_gw(client_session, edge_id, None, None)
 
     if module.params['firewall'] == 'false' and fw_state:
         set_firewall(client_session, edge_id, False)
