@@ -35,9 +35,9 @@ def get_logical_switch(client_session, logical_switch_name):
     return logical_switch_id
 
 
-def attach_vm_to_portgroup(client_session, object_moid, portgroup_id):
+def attach_vm_to_portgroup(client_session, object_moid, portgroup_id, device_number):
     attach = {'com.vmware.vshield.vsm.inventory.dto.VnicDto': {'objectId': object_moid + '.000',
-                                                               'vnicUuid': object_moid + '.000',
+                                                               'vnicUuid': object_moid + device_number,
                                                                'portgroupId': portgroup_id}}
     return client_session.create('logicalSwitchVmAttach', request_body_dict=attach)
 
@@ -50,13 +50,15 @@ def main():
             portgroup_id=dict(default=None),
             logicalswitch=dict(default=None),
             object_moid=dict(required=True),
+            device_number=dict(required=True),            
         ),
         supports_check_mode=False
     )
 
     portgroup_id = module.params['portgroup_id']
     logicalswitch = module.params['logicalswitch']
-
+    device_number = module.params['device_number']
+ 
     if portgroup_id and logicalswitch:
         module.fail_json(msg='Only set portgroup_id OR logicalswitch, not both!')
 
@@ -74,7 +76,7 @@ def main():
         if portgroup_id:
             module.fail_json(msg='If VM must be detached, don\'t set portgroup or logicalswitch')
 
-    action = attach_vm_to_portgroup(client_session, module.params['object_moid'], portgroup_id)
+    action = attach_vm_to_portgroup(client_session, module.params['object_moid'], portgroup_id, device_number)
 
     if action:
         changed = True
