@@ -38,7 +38,7 @@ def check_nsx_api(module):
     return response.status_code, response.content
 
 
-def wait_for_api(module, sleep_time=15):
+def wait_for_api(module, sleep_time=24):
     status_poll_count = 0
     while status_poll_count < 30:
         api_status = check_nsx_api(module)
