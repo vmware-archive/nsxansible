@@ -126,23 +126,25 @@ def get_dlr_routes(client_session, dlr_id):
         routes = client_session.normalize_list_return(rtg_cfg['staticRouting']['staticRoutes']['route'])
     else:
         routes = []
-
     dfgw_dict = rtg_cfg['staticRouting'].get('defaultRoute', '')
     if dfgw_dict != '':
         dfgw = dfgw_dict.get('gatewayAddress', '')
+        dfgw_adminDistance = dfgw_dict.get('adminDistance', '')
     else:
         dfgw = None
+        dfgw_adminDistance = None
+    return routes, dfgw, dfgw_adminDistance
 
-    return routes, dfgw
 
-
-def config_def_gw(client_session, dlr_id, dfgw):
+def config_def_gw(client_session, dlr_id, dfgw, dfgw_adminDistance):
     rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': dlr_id})['body']
     if dfgw:
         try:
             rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
+            rtg_cfg['staticRouting']['defaultRoute']['adminDistance'] = dfgw_adminDistance
         except KeyError:
-            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': '1', 'mtu': '1500'}
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance':
+                dfgw_adminDistance, 'mtu': '1500'}
     else:
         rtg_cfg['staticRouting']['defaultRoute'] = None
 
@@ -381,6 +383,7 @@ def main():
             interfaces=dict(required=True, type='list'),
             routes=dict(default=[], type='list'),
             default_gateway=dict(),
+            default_gateway_adminDistance=dict(default='1'),
             username=dict(),
             password=dict(),
             remote_access=dict(default='false', choices=['true', 'false']),
@@ -419,7 +422,7 @@ def main():
             module.exit_json(changed=False, dlr_create_response=dlr_create_response,
                              dlr_delete_response=dlr_delete_response)
 
-    routes, current_dfgw = get_dlr_routes(client_session, dlr_id)
+    routes, current_dfgw, current_dfgw_adminDistance = get_dlr_routes(client_session, dlr_id)
     ha_state = check_ha_status(client_session, dlr_id)
 
     if not ha_state and module.params['ha_enabled'] == 'true':
@@ -438,11 +441,13 @@ def main():
         changed = True
 
     if module.params['default_gateway']:
-        if current_dfgw != module.params['default_gateway']:
-            changed = config_def_gw(client_session, dlr_id, module.params['default_gateway'])
+        if (current_dfgw != module.params['default_gateway']) or \
+                (current_dfgw_adminDistance != module.params['default_gateway_adminDistance']):
+            changed = config_def_gw(client_session, dlr_id, module.params['default_gateway'],
+                                    module.params['default_gateway_adminDistance'])
     else:
         if current_dfgw:
-            changed = config_def_gw(client_session, dlr_id, None)
+            changed = config_def_gw(client_session, dlr_id, None, None)
 
     if changed:
         module.exit_json(changed=True, interfaces=current_interfaces)

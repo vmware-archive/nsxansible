@@ -18,15 +18,23 @@
 # IN THE SOFTWARE.
 
 
-def retrieve_scope(session, tz_name):
+def retrieve_scope(module, session, tz_name):
     vdn_scopes = session.read('vdnScopes', 'read')['body']
     vdn_scope_dict_list = vdn_scopes['vdnScopes']['vdnScope']
+    vdn_scope_id = None
     if isinstance(vdn_scope_dict_list, dict):
         if vdn_scope_dict_list['name'] == tz_name:
-            return vdn_scope_dict_list['objectId']
+            vdn_scope_id = vdn_scope_dict_list['objectId']
     elif isinstance(vdn_scope_dict_list, list):
-        return [scope['objectId'] for scope in vdn_scope_dict_list if scope['name'] == tz_name][0]
+        try:
+            vdn_scope_id = [scope['objectId'] for scope in vdn_scope_dict_list if scope['name'] == tz_name][0]
+        except IndexError:
+            vdn_scope_id = None
 
+    if vdn_scope_id:
+        return vdn_scope_id
+    else:
+        module.fail_json(msg='The transport zone with the name {} could not be found in NSX'.format(tz_name))
 
 def get_lswitch_id(session, lswitchname, scope):
     lswitches_api = session.read_all_pages('logicalSwitches', uri_parameters={'scopeId': scope})
@@ -78,7 +86,7 @@ def main():
     client_session=NsxClient(module.params['nsxmanager_spec']['raml_file'], module.params['nsxmanager_spec']['host'],
                              module.params['nsxmanager_spec']['user'], module.params['nsxmanager_spec']['password'])
 
-    vdn_scope=retrieve_scope(client_session, module.params['transportzone'])
+    vdn_scope=retrieve_scope(module, client_session, module.params['transportzone'])
     lswitch_id=get_lswitch_id(client_session, module.params['name'], vdn_scope)
 
     if len(lswitch_id) is 0 and 'present' in module.params['state']:

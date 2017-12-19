@@ -80,14 +80,14 @@
       datastore_moid: "{{ gather_moids_ds.object_id }}"
       datacenter_moid: "{{ gather_moids_cl.datacenter_moid }}"
       interfaces:
-        vnic0: 
-          ip: "{{ esg_networks.uplink.ip }}" 
+        vnic0:
+          ip: "{{ esg_networks.uplink.ip }}"
           prefix_len: "{{ esg_networks.uplink.prefix_len }}"
           portgroup_id: "{{ esg_networks.uplink.portgroup_id }}"
           name: "{{ esg_networks.uplink.name }}"
           iftype: "{{ esg_networks.uplink.iftype }}"
         vnic1:
-          ip: "{{ esg_networks.transit_net.ip }}" 
+          ip: "{{ esg_networks.transit_net.ip }}"
           prefix_len: "{{ esg_networks.transit_net.prefix_len }}"
           logical_switch: "{{ esg_networks.transit_net.logical_switch }}"
           name: "{{ esg_networks.transit_net.name }}"
@@ -155,9 +155,9 @@
     tags: dlr_create
 
   # Setting the bellow fact is needed as the DLR OSPF module needs the DLR uplink vnic index in the OSPF Area Map
-  - set_fact: 
+  - set_fact:
       dlr_uplink_index: "{{ item.index }}"
-    when: item.name == dlr_networks.transit_net.name 
+    when: item.name == dlr_networks.transit_net.name
     with_items: "{{ create_dlr.interfaces }}"
     tags: dlr_create
 
@@ -168,7 +168,8 @@
       edge_name: 'ansibleESG'
       router_id: '10.114.209.94'
       default_originate: True
-      areas: 
+      ecmp: True
+      areas:
         - { area_id: 0 }
         - { area_id: 10 }
       area_map:
@@ -185,10 +186,10 @@
       router_id: '172.24.1.3'
       forwarding_address: '172.24.1.2'
       protocol_address: '172.24.1.3'
-      areas: 
+      areas:
         - { area_id: 10 }
       area_map:
-        - { area_id: 10, vnic: "{{ dlr_uplink_index }}" }      
+        - { area_id: 10, vnic: "{{ dlr_uplink_index }}" }
     register: ospf_dlr
     tags: ospf_dlr
 

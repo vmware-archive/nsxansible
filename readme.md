@@ -118,6 +118,40 @@ Example:
   #- debug: var=create_logical_switch
 ```
 
+###  Module `vcenter_nsx_license`
+##### Adds a license key to the vCenter license manager and applies it to NSX
+
+- vcenter:
+Mandatory: Hostname or IP address of the vCenter server
+- vcusername:
+Mandatory: Username on the vCenter
+- vcpassword:
+Mandatory: Password of the vCenter
+- license_key:
+Mandatory: License to be added and attached to NSX
+
+Example:
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab_deploy.yml
+  tasks:
+  - name: Apply NSX License
+    vcenter_nsx_license:
+      vcenter: "{{ vcHostname }}"
+      vcenter_user: "{{ vcUser }}"
+      vcenter_passwd: '"{{ vcPassword }}"'
+      license_key: "L029P-JLL8K-28089-0UCK6-1TCH1"
+      # Note: The above license is an old time bombed license. Don't apply it to production!
+    register: nsxlic
+    tags: nsx_license
+
+  - debug: msg="{{ nsxlic }}"
+```
+
 ###  Module `nsx_vc_registration`
 ##### Registers NSX Manager to VC or changes the registration
 
@@ -643,6 +677,8 @@ Mandatory: The vCenter MOID of the datacenter to deploy the ESG in
 Mandatory: A dictionary that holds the configuration of each vnic as a sub-dictionary. See the interfaces details section for more information
 - default_gateway:
 Optional: The IP Address of the default gateway
+- default_gateway_adminDistance:
+Optional: The Admin Distance for the default gateway
 - routes:
 Optional: A list of dictionaries holding static route configurations. See the route details section for more information
 - username:
@@ -673,6 +709,7 @@ Example:
         vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
         vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'transit_net', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
       default_gateway: '10.114.209.65'
+      # default_gateway_adminDistance: 5
       routes:
         - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
         - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}
@@ -696,7 +733,7 @@ Sub-Directory:
 Mandatory: The IP Address of the vnic
 - prefix_len:
 Mandatory: The prefix length for the IP on the vnic, e.g. 24 for a /24 (255.255.255.0)
-- if_type:
+- iftype:
 Mandatory: The interface type, either 'uplink' or 'internal'
 - logical_switch:
 Optional: The logical switch id to attach the ESG vnic to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
@@ -755,6 +792,8 @@ Mandatory: The vCenter MOID of the portgroup used for the HA network and control
 Mandatory: A list that holds the configuration of each interface as a dictionary. See the interfaces details section for more information
 - default_gateway:
 Optional: The IP Address of the default gateway
+- default_gateway_adminDistance:
+Optional: The Admin Distance for the default gateway
 - routes:
 Optional: A list of dictionaries holding static route configurations. See the route details section for more information
 - username:
@@ -790,6 +829,7 @@ Example:
         - {network: '10.11.24.0/24', next_hop: '172.16.4.2'}
         - {network: '10.11.25.0/24', next_hop: '172.16.4.2'}
       default_gateway: '192.168.178.1'
+      # default_gateway_adminDistance: 5
       remote_access: 'true'
       username: 'admin'
       password: 'VMware1!VMware1!'
@@ -805,7 +845,7 @@ Each interface passed to the module in the interfaces list variable is defined a
 Mandatory: The IP Address of the interface
 - prefix_len:
 Mandatory: The prefix length for the IP on the interface, e.g. 24 for a /24 (255.255.255.0)
-- if_type:
+- iftype:
 Mandatory: The interface type, either 'uplink' or 'internal'
 - logical_switch:
 Optional: The logical switch id to attach the DLR Interface to, e.g. virtualwire-10. NOTE: Either logical_switch or portgroupid need to be supplied.
@@ -866,6 +906,8 @@ Optional: Log level for OSPF state changes, choices=['debug', 'info', 'notice', 
 Optional: A list of Dictionaries with Areas, See the Area details section for more information
 - area_map:
 Optional: A list of Dictionaries with Area to interface mappings, See the area_map details section for more information
+- ecmp:
+Optional: true / false, switches on or off ECMP support on the Edge Gateway
 
 Example:
 ```yml
@@ -1011,6 +1053,68 @@ rules:
   - {learner: 'ospf', priority: 1, static: 'true', connected: 'true', bgp: 'false', ospf: 'false', prefix: 'testprfx1', action: 'deny'}
   - {learner: 'bgp', priority: 1, connected: true, prefix: 'testprfx2', action: 'deny'}
   - {learner: 'bgp', priority: 0, connected: true, prefix: 'testprfx1'}
+```
+
+###  Module `nsx_attach_vm_switch`
+##### Move (attach) a VM to a NSX logical Switch
+
+- state:
+present or absent, defaults to present. Absent can be used to detach a VM from the logical-switch or port-group.
+In case of absent, portgroup_id and/or logicalswitch need to be unset
+- portgroup_id:
+If portgroup_id is passed to the module, the VM will be moved to the VDS portgroup Id specified. Can only be set if logicalswitch is not set
+- logicalswitch:
+If logicalswitch is passed to the module, the VM will be moved to the logicalswitch name specified. Can only be set if portgroup_id is not set
+- object_moid:
+Mandatory: The moid of the VM to be moved to the port-group of logical-switch, e.g. vm-53
+
+Example:
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: Gather vCenter MOIDs PG
+    vcenter_gather_moids:
+      hostname: 'vc01.yves.local'
+      username: 'administrator@yves.local'
+      password: 'VMware1!'
+      datacenter_name: 'tpm-lab'
+      portgroup_name: vlan41
+      validate_certs: False
+    register: gather_moid_pg
+  - name: Gather vCenter UUID VM
+    vcenter_gather_moids:
+      hostname: 'vc01.yves.local'
+      username: 'administrator@yves.local'
+      password: 'VMware1!'
+      datacenter_name: 'tpm-lab'
+      virtualmachine_name: test-rhel72-lcp
+      validate_certs: False
+    register: gather_uuid_vm
+
+  - debug: msg="The searched VM uuid is {{ gather_uuid_vm.object_uuid }}"
+  - debug: msg="The searched PG moid is {{ gather_moid_pg.object_id }}"
+
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: vm switch migrate
+    nsx_attach_vm_switch:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      object_moid: "{{ gather_uuid_vm.object_uuid }}"
+      logicalswitch: test_ls
+      # portgroup_id: "{{ gather_moid_pg.object_id }}"
+    register: create_logical_switch
+
+  - debug: var=create_logical_switch
 ```
 
 ## Example Playbooks and roles

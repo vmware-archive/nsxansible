@@ -49,6 +49,7 @@
         vnic0: {ip: '10.114.209.94', prefix_len: 27, portgroup_id: "{{ gather_moids_upl_pg.object_id }}", name: 'Uplink vnic', iftype: 'uplink', fence_param: 'ethernet0.filter1.param1=1'}
         vnic1: {ip: '192.168.178.1', prefix_len: 24, logical_switch: 'transit_net', name: 'Internal vnic', iftype: 'internal', fence_param: 'ethernet0.filter1.param1=1'}
       default_gateway: '10.114.209.65'
+      # default_gateway_adminDistance: 5
       routes:
         - {network: '10.11.12.0/24', next_hop: '192.168.178.2', admin_distance: '1', mtu: '1500', description: 'very important route'}
         - {network: '10.11.13.0/24', next_hop: '192.168.178.2', mtu: '1600'}

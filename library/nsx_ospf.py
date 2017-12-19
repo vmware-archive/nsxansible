@@ -69,6 +69,15 @@ def check_router_id(current_config, router_id):
         current_config['routing']['routingGlobalConfig']['routerId'] = router_id
         return True, current_config
 
+def check_ecmp(current_config, ecmp):
+    current_ecmp_cfg = current_config['routing']['routingGlobalConfig']
+    current_ecmp_state = current_ecmp_cfg.get('ecmp', None)
+    if current_ecmp_state == ecmp:
+        return False, current_config
+    else:
+        current_config['routing']['routingGlobalConfig']['ecmp'] = ecmp
+        return True, current_config
+
 
 def check_ospf_options(current_config, graceful_restart, default_originate, forwarding_address, protocol_address):
     changed = False
@@ -323,6 +332,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             edge_name=dict(required=True, type='str'),
             router_id=dict(required=True, type='str'),
+            ecmp=dict(default='false', choices=['true', 'false']),
             graceful_restart=dict(default=True, type='bool'),
             default_originate=dict(default=False, type='bool'),
             protocol_address=dict(type='str'),
@@ -355,6 +365,7 @@ def main():
 
     changed_state, current_config = set_ospf_state(current_config)
     changed_rtid, current_config = check_router_id(current_config, module.params['router_id'])
+    changed_ecmp, current_config = check_ecmp(current_config, module.params['ecmp'])
     changed_opt, current_config = check_ospf_options(current_config, module.params['graceful_restart'],
                                                      module.params['default_originate'],
                                                      module.params['forwarding_address'],
@@ -372,7 +383,7 @@ def main():
 
     changed_area_map, current_config = check_area_mapping(client_session, current_config, module.params['area_map'])
 
-    if (changed_state or changed_rtid or changed_opt or changed_areas or changed_area_map):
+    if (changed_state or changed_rtid or changed_ecmp or changed_opt or changed_areas or changed_area_map):
         update_config(client_session, current_config, edge_id)
         module.exit_json(changed=True, current_config=current_config)
     else:

@@ -140,19 +140,22 @@ def get_esg_routes(client_session, esg_id):
     dfgw_dict = rtg_cfg['staticRouting'].get('defaultRoute', '')
     if dfgw_dict != '':
         dfgw = dfgw_dict.get('gatewayAddress', '')
+        dfgw_adminDistance = dfgw_dict.get('adminDistance', '')
     else:
         dfgw = None
+        dfgw_adminDistance = None
+    return routes, dfgw, dfgw_adminDistance
 
-    return routes, dfgw
 
-
-def config_def_gw(client_session, esg_id, dfgw):
+def config_def_gw(client_session, esg_id, dfgw, dfgw_adminDistance):
     rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']
     if dfgw:
         try:
             rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
+            rtg_cfg['staticRouting']['defaultRoute']['adminDistance'] = dfgw_adminDistance
         except KeyError:
-            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': '1', 'mtu': '1500'}
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': dfgw_adminDistance,
+                                                        'mtu': '1500'}
     else:
         rtg_cfg['staticRouting']['defaultRoute'] = None
 
@@ -201,7 +204,7 @@ def params_check_ifaces(module):
         portgroupid = iface.get('portgroup_id', None)
         if not (ip and pfx_len and if_type):
             module.fail_json(msg='You are missing one of the following parameter '
-                                 'in the Interface Dict: ip or pfx_len or if_type')
+                                 'in the Interface Dict: ip or prefix_len or iftype')
         if not (lswitch or portgroupid):
             module.fail_json(msg='You are missing either: logical_switch or portgroup_id as '
                                  'parameters on {}'.format(iface_key))
@@ -377,6 +380,7 @@ def main():
             datacenter_moid=dict(required=True),
             interfaces=dict(required=True, type='dict'),
             default_gateway=dict(),
+            default_gateway_adminDistance=dict(default='1'),
             routes=dict(default=[], type='list'),
             username=dict(),
             password=dict(),
@@ -414,7 +418,7 @@ def main():
             module.exit_json(changed=False, esg_create_response=esg_create_response,
                              esg_delete_response=esg_delete_response)
 
-    routes, current_dfgw = get_esg_routes(client_session, edge_id)
+    routes, current_dfgw, current_dfgw_adminDistance = get_esg_routes(client_session, edge_id)
     fw_state = get_firewall_state(client_session, edge_id)
     ifaces_changed = check_interfaces(client_session, edge_id, module)
     routes_changed = check_routes(client_session, edge_id, routes, module)
@@ -425,11 +429,13 @@ def main():
         changed = True
 
     if module.params['default_gateway']:
-        if current_dfgw != module.params['default_gateway']:
-            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'])
+        if current_dfgw != (module.params['default_gateway']) or \
+                (current_dfgw_adminDistance != module.params['default_gateway_adminDistance']):
+            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'],
+                                    module.params['default_gateway_adminDistance'])
     else:
         if current_dfgw:
-            changed = config_def_gw(client_session, edge_id, None)
+            changed = config_def_gw(client_session, edge_id, None, None)
 
     if module.params['firewall'] == 'false' and fw_state:
         set_firewall(client_session, edge_id, False)
