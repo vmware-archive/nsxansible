@@ -385,6 +385,7 @@ def main():
             interfaces=dict(required=True, type='dict'),
             default_gateway=dict(),
             default_gateway_adminDistance=dict(default='1'),
+            default_gateway_vnic=dict(),
             routes=dict(default=[], type='list'),
             username=dict(),
             password=dict(),
