@@ -84,6 +84,46 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
         return False
 
 
+def dhcp_server(client_session, edge_name, enabled=None, syslog_enabled=None, syslog_level=None):
+    """
+
+    """
+    edge_id, edge_params = get_edge(client_session, edge_name)
+
+    if not edge_id:
+        return None
+
+    change_needed = False
+
+    # Check current DHCP service status
+    current_dhcp_config = client_session.read('dhcp', uri_parameter={'edgeId': edge_id})['body']
+    new_dhcp_config = current_dhcp_config
+
+    if enabled:
+        if current_dhcp_config['dhcp']['enabled'] == 'false':
+            new_dhcp_config['dhcp']['enabled'] = 'true'
+            change_needed = True
+    else:
+        if current_dhcp_config['dhcp']['enabled'] == 'true':
+            new_dhcp_config['dhcp']['enabled'] = 'false'
+            change_needed = True
+
+    if syslog_level:
+        if current_dhcp_config['dhcp']['logging']['logLevel'] != syslog_level:
+            new_dhcp_config['dhcp']['logging']['logLevel'] = syslog_level
+            change_needed = True
+
+    if not change_needed:
+        return True
+    else:
+        result = client_session.update('dhcp', uri_parameter={'edgeId': edge_id}, request_body_dict=new_dhcp_config)
+
+        if cfg_result['status'] == 204:
+            return True
+        else:
+            return False
+
+
 def main():
     module = AnsibleModule(
             argument_spec=dict(
