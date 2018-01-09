@@ -48,7 +48,7 @@ def get_edge(client_session, edge_name):
 
 
 def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, domain_name,
-                  dns_server_1, dns_server_2, lease_time, auto_dns=None):
+                  dns_server_1, dns_server_2, lease_time, auto_dns):
     """
     :param client_session: An instance of an NsxClient session
     :param edge_name: The name of the edge searched
@@ -72,7 +72,7 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
                       'subnetMask': subnet,
                       'domainName': domain_name,
                       'primaryNameServer': dns_server_1,
-                      'secondaryNameServer': dns_server2,
+                      'secondaryNameServer': dns_server_2,
                       'leaseTime': lease_time,
                       'autoConfigureDNS': auto_dns}
 
@@ -84,9 +84,13 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
         return False
 
 
-def dhcp_server(client_session, edge_name, enabled=None, syslog_enabled=None, syslog_level=None):
+def dhcp_server(client_session, edge_name, dhcp_enabled=None, syslog_enabled=None, syslog_level=None):
     """
-
+    :param client_session: An instance of an NsxClient session
+    :param edge_name: The name of the edge searched
+    :param syslog_enable: Whether or not syslog should be enabled.
+    :param syslog_level: The verbosity level of syslog, if enabled.
+    :return: Returns true or false
     """
     edge_id, edge_params = get_edge(client_session, edge_name)
 
@@ -127,17 +131,20 @@ def dhcp_server(client_session, edge_name, enabled=None, syslog_enabled=None, sy
 def main():
     module = AnsibleModule(
             argument_spec=dict(
-                state=dict(default='present', choices=['present', 'absent']),
                 nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
                 name=dict(required=True),
-                ip_range=dict(required=True),
+                mode=dict(required=True, choices=['create_pool','enable_service']),
+                ip_range=dict(),
                 default_gateway=dict(),
                 subnet=dict(required=True),
                 domain_name=dict(),
                 dns_server_1=dict(),
                 dns_server_2=dict(),
-                lease_time=dict(default='86400'),
-                auto_dns=dict(default=False, choices=[True, False])
+                lease_time=dict(),
+                auto_dns=dict(),
+                dhcp_enabled=dict(default='yes', choices=['yes', 'no']),
+                syslog_enabled=dict(default='yes', choices=['yes', 'no']),
+                syslog_level=dict(default='info', choices=['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'])
             ),
             supports_check_mode=False
     )
@@ -150,6 +157,9 @@ def main():
 
     changed = False
     edge_id, edge_params = get_edge(client_session, module.params['name'])
+
+    if module.params['mode'] == 'create_pool':
+        changed =  add_dhcp_pool(client_session, module.params['name'], module.params['ip_range'], module.params['default_gateway'], module.params['subnet'], module.params['domain_name'], module.params['dns_server_1'], module.params['dns_server_2'], module.params['lease_time'], module.params['auto_dns'])
     
     if changed:
         module.exit_json(changed=True)
