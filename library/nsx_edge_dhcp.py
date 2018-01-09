@@ -84,7 +84,7 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
         return False
 
 
-def dhcp_server(client_session, edge_name, dhcp_enabled=None, syslog_enabled=None, syslog_level=None):
+def dhcp_server(client_session, edge_name, dhcp_enabled, syslog_enabled, syslog_level):
     """
     :param client_session: An instance of an NsxClient session
     :param edge_name: The name of the edge searched
@@ -141,7 +141,7 @@ def main():
                 dns_server_1=dict(),
                 dns_server_2=dict(),
                 lease_time=dict(),
-                auto_dns=dict(),
+                auto_dns=dict(default='false'),
                 dhcp_enabled=dict(default='yes', choices=['yes', 'no']),
                 syslog_enabled=dict(default='yes', choices=['yes', 'no']),
                 syslog_level=dict(default='info', choices=['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'])
@@ -160,6 +160,8 @@ def main():
 
     if module.params['mode'] == 'create_pool':
         changed =  add_dhcp_pool(client_session, module.params['name'], module.params['ip_range'], module.params['default_gateway'], module.params['subnet'], module.params['domain_name'], module.params['dns_server_1'], module.params['dns_server_2'], module.params['lease_time'], module.params['auto_dns'])
+    elif module.params['mode'] == 'enable_service':
+        changed = dhcp_service(client_session, module.params['name'], module.params['dhcp_enabled'], module.params['syslog_enabled'], module.params['syslog_level'])
     
     if changed:
         module.exit_json(changed=True)
