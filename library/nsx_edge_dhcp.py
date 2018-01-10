@@ -48,7 +48,7 @@ def get_edge(client_session, edge_name):
 
 
 def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, domain_name,
-                  dns_server_1, dns_server_2, lease_time, auto_dns):
+                  dns_server_1, dns_server_2, lease_time, auto_dns, next_server, bootfile):
     """
     :param client_session: An instance of an NsxClient session
     :param edge_name: The name of the edge searched
@@ -60,6 +60,8 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
     :param dns_server_2: The secondary DNS for the IP pool
     :param lease_time: The DHCP lease time value, default is 1 day
     :param auto_dns: If set to true, the DNS servers from the NSX Manager will be used
+    :param next_server: Global TFTP server setting
+    :param bootfile: File to be downloaded from TFTP server (option 67)
     :return: Returns true or false
     """
     edge_id, edge_params = get_edge(client_session, edge_name)
@@ -74,7 +76,10 @@ def add_dhcp_pool(client_session, edge_name, ip_range, default_gateway, subnet, 
                       'primaryNameServer': dns_server_1,
                       'secondaryNameServer': dns_server_2,
                       'leaseTime': lease_time,
-                      'autoConfigureDNS': auto_dns}
+                      'autoConfigureDNS': auto_dns,
+                      'nextServer': next_server,
+                      'dhcpOptions': {'option67': bootfile}
+                     }
 
     cfg_result = client_session.create('dhcpPool', uri_parameters={'edgeId': edge_id}, request_body_dict={'ipPool': dhcp_pool_dict})
 
@@ -144,7 +149,9 @@ def main():
                 auto_dns=dict(default='false'),
                 dhcp_enabled=dict(default='yes', choices=['yes', 'no']),
                 syslog_enabled=dict(default='yes', choices=['yes', 'no']),
-                syslog_level=dict(default='info', choices=['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'])
+                syslog_level=dict(default='info', choices=['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug']),
+                next_server=dict(),
+                bootfile=dict()
             ),
             supports_check_mode=False
     )
@@ -159,7 +166,7 @@ def main():
     edge_id, edge_params = get_edge(client_session, module.params['name'])
 
     if module.params['mode'] == 'create_pool':
-        changed =  add_dhcp_pool(client_session, module.params['name'], module.params['ip_range'], module.params['default_gateway'], module.params['subnet'], module.params['domain_name'], module.params['dns_server_1'], module.params['dns_server_2'], module.params['lease_time'], module.params['auto_dns'])
+        changed =  add_dhcp_pool(client_session, module.params['name'], module.params['ip_range'], module.params['default_gateway'], module.params['subnet'], module.params['domain_name'], module.params['dns_server_1'], module.params['dns_server_2'], module.params['lease_time'], module.params['auto_dns'], module.params['next_server'], module.params['bootfile'])
     elif module.params['mode'] == 'enable_service':
         changed = dhcp_service(client_session, module.params['name'], module.params['dhcp_enabled'], module.params['syslog_enabled'], module.params['syslog_level'])
     
