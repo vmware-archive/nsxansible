@@ -23,8 +23,7 @@ def get_edge(client_session, edge_name):
 
 
 def create_nat_rule(client_session, edge_name, nat_enabled, loggingEnabled, action, vnic, originalAddress, translatedAddress,
-                    dnatMatchSourceAddress, snatMatchAddress, protocol, icmpType, originalPort,
-                    translatedPort, dnatMatchSourcePort, snatMatchDestinationPort):
+                    matchAddress, protocol, icmpType, originalPort, translatedPort, matchPort):
     """
     :param enabled: Enable rule. Boolean. Default is true.
     :param loggingEnabled: Enable logging. Default is false.
@@ -32,49 +31,48 @@ def create_nat_rule(client_session, edge_name, nat_enabled, loggingEnabled, acti
     :param vnic: Interface on which the translation is applied.
     :param originalAddress: Original address or range. Default is 'any'
     :param translatedAddress: Translated address or range. Default is 'any'.
-    :param dnatMatchSourceAddress: Source address to match in DNAT rules. Default is 'any'.
-    :param snatMatchDestinationAddress: Destination address to match in SNAT address. Default is 'any'.
+    :param matchAddress: Either dnatMatchSourceAddress or snatMatchDestinationAddress. Default is 'any'.
     :param protocol: Protocol. Default is 'any'.
     :param icmpType: ICMP type. Only supported when protocol == 'icmp'. Default is 'any'.
     ;param originalPort: Source port for SNAT, destination port for DNAT. Default is 'any'.
     :param translatedPort: Translated port. Default is 'any'.
-    :param dnatMatchSourcePort: Source port in DNAT rules. Not valid in SNAT rules. Default is 'any'.
-    :param snatMatchDestinationPort: Destination port in SNAT rules. Not valid in DNAT fules. Default is 'any'.
+    :param matchPort: Either dnatMatchSourcePort or snatMatchDestinationPort. Default is 'any'
+    :return: Returns true or false.
     """
     edge_id, edge_params = get_edge(client_session, edge_name)
 
     if action == 'snat':
-        nat_rule_dict = {'enabled': nat_enabled,
-                         'loggingEnabled': loggingEnabled,
-                         'action': action,
+        nat_rule_dict = {'action': action,
                          'vnic': vnic,
                          'originalAddress': originalAddress,
                          'translatedAddress': translatedAddress,
-                         'snatMatchDestinationAddress': snatMatchDestinationAddress,
+                         'snatMatchDestinationAddress': matchAddress,
+                         'loggingEnabled': loggingEnabled,
+                         'enabled': nat_enabled,
                          'protocol': protocol,
                          'originalPort': originalPort,
                          'translatedPort': translatedPort,
-                         'snatMatchDestinationPort': snatMatchDestinationPort
+                         'snatMatchDestinationPort': matchPort
                         }
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
     elif action == 'dnat':
-        nat_rule_dict = {'enabled': nat_enabled,
-                         'loggingEnabled': loggingEnabled,
-                         'action': action,
+        nat_rule_dict = {'action': action,
                          'vnic': vnic,
                          'originalAddress': originalAddress,
                          'translatedAddress': translatedAddress,
-                         'dnatMatchSourceAddress': dnatMatchSourceAddress,
+                         'dnatMatchSourceAddress': matchAddress,
+                         'loggingEnabled': loggingEnabled,
+                         'enabled': nat_enabled,
                          'protocol': protocol,
                          'originalPort': originalPort,
                          'translatedPort': translatedPort,
-                         'dnatMatchSourcePort': dnatMatchSourcePort
+                         'dnatMatchSourcePort': matchPort
                         }
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
 
-    cfg_result = client_session.create('nat', uri_parameters={'edgeId': edge_id}, request_body_dict={'natRule': nat_rule_dict})
+    cfg_result = client_session.create('edgeNatRules', uri_parameters={'edgeId': edge_id}, request_body_dict={'natRule': nat_rule_dict})
 
     if cfg_result['status'] == 204:
         return True
@@ -86,16 +84,17 @@ def main():
             argument_spec=dict(
                 state=dict(default='present', choices=['present', 'absent']),
                 nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
-                edge_name=dict(required=True),
+                name=dict(required=True),
+                mode=dict(required=True, choices=['create', 'delete']),
                 nat_enabled=dict(default=True),
                 loggingEnabled=dict(default=False),
-                action=dict(required=True, choices=['dnat', 'snat']),
+                rule_type=dict(required=True, choices=['dnat', 'snat']),
                 vnic=dict(),
                 originalAddress=dict(default='any'),
                 translatedAddress=dict(default='any'),
                 dnatMatchSourceAddress=dict(default='any'),
                 snatMatchDestinationAddress=dict(default='any'),
-                procotol=dict(default='any'),
+                protocol=dict(default='any'),
                 icmpType=dict(default='any'),
                 originalPort=dict(default='any'),
                 translatedPort=dict(default='any'),
@@ -113,6 +112,26 @@ def main():
 
     changed = False
     edge_id, edge_params = get_edge(client_session, module.params['name'])
+
+    if module.params['mode'] == 'create':
+        if module.params['rule_type'] == 'snat':
+            changed = create_nat_rule(client_session, module.params['name'], module.params['nat_enabled'],
+                                      module.params['loggingEnabled'], module.params['rule_type'], module.params['vnic'],
+                                      module.params['originalAddress'], module.params['translatedAddress'],
+                                      module.params['snatMatchDestinationAddress'], module.params['protocol'],
+                                      module.params['icmpType'], module.params['originalPort'], module.params['translatedPort'],
+                                      module.params['snatMatchDestinationPort']
+                                     )
+        if module.params['rule_type'] == 'dnat':
+            changed = create_nat_rule(client_session, module.params['name'], module.params['nat_enabled'],
+                                      module.params['logginEnabled'], module.params['rule_type'], module.params['vnic'],
+                                      module.params['originalAddress'], module.params['translatedAddress'],
+                                      module.params['dnatMatchSourceAddress'], module.params['protocol'],
+                                      module.params['icmpType'], module.params['originalPort'], module.params['translatedPort'],
+                                      module.params['dnatMatchSourcePort']
+                                     )
+    else:
+        changed = False
     
     if changed:
         module.exit_json(changed=True)
