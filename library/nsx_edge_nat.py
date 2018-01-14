@@ -42,12 +42,12 @@ def create_nat_rule(client_session, edge_name, nat_enabled, loggingEnabled, acti
     edge_id, edge_params = get_edge(client_session, edge_name)
 
     if action == 'snat':
-        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort}
+        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'snatMatchDestinationAddress': 'any', 'snatMatchDestinationPort': 'any'}
 
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
     elif action == 'dnat':
-        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort}
+        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'dnatMatchSourceAddress': 'any', 'dnatMatchSourcePort': 'any'}
 
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
