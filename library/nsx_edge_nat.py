@@ -42,33 +42,13 @@ def create_nat_rule(client_session, edge_name, nat_enabled, loggingEnabled, acti
     edge_id, edge_params = get_edge(client_session, edge_name)
 
     if action == 'snat':
-        nat_rule_dict = {'action': action,
-                         'vnic': vnic,
-                         'originalAddress': originalAddress,
-                         'translatedAddress': translatedAddress,
-                         'snatMatchDestinationAddress': matchAddress,
-                         'loggingEnabled': loggingEnabled,
-                         'enabled': nat_enabled,
-                         'protocol': protocol,
-                         'originalPort': originalPort,
-                         'translatedPort': translatedPort,
-                         'snatMatchDestinationPort': matchPort
-                        }
+        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort}
+
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
     elif action == 'dnat':
-        nat_rule_dict = {'action': action,
-                         'vnic': vnic,
-                         'originalAddress': originalAddress,
-                         'translatedAddress': translatedAddress,
-                         'dnatMatchSourceAddress': matchAddress,
-                         'loggingEnabled': loggingEnabled,
-                         'enabled': nat_enabled,
-                         'protocol': protocol,
-                         'originalPort': originalPort,
-                         'translatedPort': translatedPort,
-                         'dnatMatchSourcePort': matchPort
-                        }
+        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort}
+
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
 
@@ -86,8 +66,8 @@ def main():
                 nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
                 name=dict(required=True),
                 mode=dict(required=True, choices=['create', 'delete']),
-                nat_enabled=dict(default=True),
-                loggingEnabled=dict(default=False),
+                nat_enabled=dict(default='true'),
+                loggingEnabled=dict(default='false'),
                 rule_type=dict(required=True, choices=['dnat', 'snat']),
                 vnic=dict(),
                 originalAddress=dict(default='any'),
@@ -124,7 +104,7 @@ def main():
                                      )
         if module.params['rule_type'] == 'dnat':
             changed = create_nat_rule(client_session, module.params['name'], module.params['nat_enabled'],
-                                      module.params['logginEnabled'], module.params['rule_type'], module.params['vnic'],
+                                      module.params['loggingEnabled'], module.params['rule_type'], module.params['vnic'],
                                       module.params['originalAddress'], module.params['translatedAddress'],
                                       module.params['dnatMatchSourceAddress'], module.params['protocol'],
                                       module.params['icmpType'], module.params['originalPort'], module.params['translatedPort'],
