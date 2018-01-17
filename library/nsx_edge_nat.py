@@ -42,17 +42,17 @@ def create_nat_rule(client_session, edge_name, nat_enabled, loggingEnabled, acti
     edge_id, edge_params = get_edge(client_session, edge_name)
 
     if action == 'snat':
-        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'snatMatchDestinationAddress': 'any', 'snatMatchDestinationPort': 'any'}
+        nat_rule_dict = { 'natRule': {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'snatMatchDestinationAddress': 'any', 'snatMatchDestinationPort': 'any'}}
 
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
     elif action == 'dnat':
-        nat_rule_dict = {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'dnatMatchSourceAddress': 'any', 'dnatMatchSourcePort': 'any'}
+        nat_rule_dict = { 'natRule': {'action': action, 'vnic': vnic, 'originalAddress': originalAddress, 'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled, 'enabled': nat_enabled, 'protocol': protocol, 'originalPort': originalPort, 'translatedPort': translatedPort, 'dnatMatchSourceAddress': 'any', 'dnatMatchSourcePort': 'any'}}
 
         if protocol == 'icmp':
             nat_rule_dict['icmpType'] = icmpType
 
-    cfg_result = client_session.create('edgeNatRules', uri_parameters={'edgeId': edge_id}, request_body_dict={'natRule': nat_rule_dict})
+    cfg_result = client_session.create('edgeNatRules', uri_parameters={'edgeId': edge_id}, request_body_dict={'natRules': nat_rule_dict})
 
     if cfg_result['status'] == 204:
         return True
