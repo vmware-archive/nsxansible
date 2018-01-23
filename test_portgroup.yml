@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - nsxanswer.yml
+
+  tasks:
+  - name: Gather MOID for NSX Logical Switch Portgroup
+    vcenter_gather_moids:
+      hostname: "{{ vcenter }}"
+      username: "{{ vcenter_user }}"
+      password: "{{ vcenter_pass }}"
+      datacenter_name: "{{ dc }}"
+      portgroup_name: "{{ switch_name }}"
+      validate_certs: False
+    register: gather_moids_switch 

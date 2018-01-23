@@ -147,15 +147,15 @@ def get_esg_routes(client_session, esg_id):
     return routes, dfgw, dfgw_adminDistance
 
 
-def config_def_gw(client_session, esg_id, dfgw, dfgw_adminDistance):
+def config_def_gw(client_session, esg_id, dfgw, vnic, mtu, dfgw_adminDistance):
+    if not mtu:
+        mtu = '1500'
     rtg_cfg = client_session.read('routingConfigStatic', uri_parameters={'edgeId': esg_id})['body']
     if dfgw:
         try:
-            rtg_cfg['staticRouting']['defaultRoute']['gatewayAddress'] = dfgw
-            rtg_cfg['staticRouting']['defaultRoute']['adminDistance'] = dfgw_adminDistance
+	    rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'vnic': vnic, 'mtu': mtu, 'adminDistance': dfgw_adminDistance}
         except KeyError:
-            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'adminDistance': dfgw_adminDistance,
-                                                        'mtu': '1500'}
+            rtg_cfg['staticRouting']['defaultRoute'] = {'gatewayAddress': dfgw, 'vnic': vnic, 'adminDistance': dfgw_adminDistance, 'mtu': mtu}
     else:
         rtg_cfg['staticRouting']['defaultRoute'] = None
 
@@ -381,6 +381,8 @@ def main():
             interfaces=dict(required=True, type='dict'),
             default_gateway=dict(),
             default_gateway_adminDistance=dict(default='1'),
+            default_gateway_vnic=dict(),
+            mtu=dict(),
             routes=dict(default=[], type='list'),
             username=dict(),
             password=dict(),
@@ -431,8 +433,7 @@ def main():
     if module.params['default_gateway']:
         if current_dfgw != (module.params['default_gateway']) or \
                 (current_dfgw_adminDistance != module.params['default_gateway_adminDistance']):
-            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'],
-                                    module.params['default_gateway_adminDistance'])
+            changed = config_def_gw(client_session, edge_id, module.params['default_gateway'], module.params['default_gateway_vnic'], module.params['mtu'], module.params['default_gateway_adminDistance'])
     else:
         if current_dfgw:
             changed = config_def_gw(client_session, edge_id, None, None)
