@@ -11,6 +11,8 @@
       nsxmanager_spec: '{{ nsxmanager_spec }}'
       mode: 'create'
       name: '{{ edge_name }}'
+      description: 'Ansible created DNAT rule'
+      loggingEnabled: 'true'
       rule_type: 'dnat'
       vnic: '0'
       protocol: 'tcp'
@@ -24,6 +26,8 @@
       nsxmanager_spec: '{{ nsxmanager_spec }}'
       mode: 'create'
       name: '{{ edge_name }}'
+      description: 'Ansible created SNAT rule'
+      loggingEnabled: 'true'
       rule_type: 'snat'
       vnic: '0'
       protocol: 'any'
@@ -31,3 +35,10 @@
       originalPort: 'any'
       translatedAddress: '10.0.0.1'
       translatedPort: 'any'
+
+  - name: Delete NAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'delete'
+      name: '{{ edge_name }}'
+      ruleId: '192622'
