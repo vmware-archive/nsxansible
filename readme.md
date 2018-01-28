@@ -810,6 +810,8 @@ Optional: This can be used to specify user-controlled ruleId. Must be between 65
 - description:
 Optional: User-defined description field.
 
+##### Create NAT rule
+
 Example:
 ```yml
   tasks:
@@ -842,6 +844,19 @@ Example:
       originalPort: 'any'
       translatedAddress: '10.180.138.131'
       translatedPort: 'any'
+```
+
+##### Delete NAT rule
+
+Example:
+```yml
+  tasks:
+  - name: Delete HTTP DNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'delete'
+      name: '{{ edge_name }}'
+      ruleId: '196622'
 ```
 
 ### Module `nsx_dlr`
