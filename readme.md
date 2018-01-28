@@ -862,8 +862,6 @@ Example:
 ### Module `nsx_edge_dhcp`
 #### Creates a DHCP scope in an Edge Services Gateway
 
-### Module `nsx_dlr`
-##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX
 - name:
 Mandatory: name of the ESG to be modified
 - ip_range:
@@ -905,6 +903,9 @@ Example:
       next_server: '{{ tftp_server }}'
       bootfile: '{{ bootfile }}'
 ```
+
+### Module `nsx_dlr`
+##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX
 
 - name:
 Mandatory: name of the DLR to be deployed
