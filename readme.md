@@ -859,8 +859,52 @@ Example:
       ruleId: '196622'
 ```
 
+### Module `nsx_edge_dhcp`
+#### Creates a DHCP scope in an Edge Services Gateway
+
 ### Module `nsx_dlr`
 ##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX
+- name:
+Mandatory: name of the ESG to be modified
+- ip_range:
+Optional: An IP range for the IP pool
+- default_gateway:
+Optional: The default gateway for the IP pool
+- subnet:
+Optional: The subnet of the IP pool
+- domain_name:
+Optional: The DNS domain name
+- dns_server_1:
+Optional: The primary DNS for the IP pool
+- dns_server_2:
+Optional: The secondary DNS for the IP pool
+- lease_time:
+Optional: The DHCP lease time value, default is 1 day
+- auto_dns:
+Optional: If set to true, the DNS servers from the NSX Manager will be used
+- next_server:
+Optional: Global TFTP server setting
+- bootfile:
+Optional: File to be downloaded from the TFTP server (option 67)
+
+Example:
+```yml
+  tasks:
+  - name: Create DHCP pool on NSX Edge
+    nsx_edge_dhcp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      name: '{{ edge_name }}'
+      mode: 'create_pool'
+      ip_range: '{{ ip_range }}'
+      subnet: '{{ netmask }}'
+      default_gateway: '{{ gateway }}'
+      domain_name: '{{ domain }}'
+      dns_server_1: '{{ dns1_ip }}'
+      dns_server_2: '{{ dns2_ip }}'
+      lease_time: '{{ lease_time }}'
+      next_server: '{{ tftp_server }}'
+      bootfile: '{{ bootfile }}'
+```
 
 - name:
 Mandatory: name of the DLR to be deployed
