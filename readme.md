@@ -770,6 +770,139 @@ routes:
   - {network: '10.11.14.0/24', next_hop: '192.168.178.2'}
 ```
 
+### Module `nsx_edge_nat`
+##### Deploys or deletes a NAT rule in an Edge Service Gateway
+
+- name:
+Mandatory: name of the Edge Services Gateway to be modified
+- mode:
+Mandatory: create or delete
+- state:
+Optional: present or absent, defaults to present
+- nat_enabled:
+Optional: true or false, defaults to true
+- loggingEnabled: 
+Optional: true or false, defaults to false
+- rule_type:
+Optional: type of NAT rule to create. dnat or snat.
+- description:
+Optional: A user-defined description for the rule
+- vnic:
+Optional: Interface on which the translation is applied
+- originalAddress:
+Optional: Original address or range, default is 'any'
+- translatedAddress:
+Optional: Translated address or range, default is 'any'
+- matchAddress:
+Optional: Either dnatMatchSourceAddress or snatMatchSourceAddress, default is 'any'
+- protocol:
+Optional: Network protocol, default is 'any'
+- icmpType:
+Optional: ICMP type. Only supported when protocol == 'icmp'. Default is 'any'
+- originalPort:
+Optional: Source port for SNAT, destination port for DNAT. Default is 'any'
+- translatedPort:
+Optional: Translated port. Default is 'any'
+- matchPort:
+Optional: Used for either dnatMatchSourcePort or snatMatchDestinationPort. Default is 'any'
+- ruleTag:
+Optional: This can be used to specify user-controlled ruleId. Must be between 65537-131072
+- description:
+Optional: User-defined description field.
+
+##### Create NAT rule
+
+Example:
+```yml
+  tasks:
+  - name: Create SSH Bastion host DNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'create'
+      name: '{{ edge_name }}'
+      description: 'Ansible created inbound SSH'
+      loggingEnabled: 'true'
+      rule_type: 'dnat'
+      vnic: '0'
+      protocol: 'tcp'
+      originalAddress: '10.180.138.131'
+      originalPort: '22'
+      translatedAddress: '192.168.0.2'
+      translatedPort: '22'
+
+  - name: Create default outbound SNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'create'
+      name: '{{ edge_name }}'
+      description: 'Ansible created default outbound'
+      loggingEnabled: 'true'
+      rule_type: 'snat'
+      vnic: '0'
+      protocol: 'any'
+      originalAddress: '192.168.0.0/20'
+      originalPort: 'any'
+      translatedAddress: '10.180.138.131'
+      translatedPort: 'any'
+```
+
+##### Delete NAT rule
+
+Example:
+```yml
+  tasks:
+  - name: Delete HTTP DNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'delete'
+      name: '{{ edge_name }}'
+      ruleId: '196622'
+```
+
+### Module `nsx_edge_dhcp`
+#### Creates a DHCP scope in an Edge Services Gateway
+
+- name:
+Mandatory: name of the ESG to be modified
+- ip_range:
+Optional: An IP range for the IP pool
+- default_gateway:
+Optional: The default gateway for the IP pool
+- subnet:
+Optional: The subnet of the IP pool
+- domain_name:
+Optional: The DNS domain name
+- dns_server_1:
+Optional: The primary DNS for the IP pool
+- dns_server_2:
+Optional: The secondary DNS for the IP pool
+- lease_time:
+Optional: The DHCP lease time value, default is 1 day
+- auto_dns:
+Optional: If set to true, the DNS servers from the NSX Manager will be used
+- next_server:
+Optional: Global TFTP server setting
+- bootfile:
+Optional: File to be downloaded from the TFTP server (option 67)
+
+Example:
+```yml
+  tasks:
+  - name: Create DHCP pool on NSX Edge
+    nsx_edge_dhcp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      name: '{{ edge_name }}'
+      mode: 'create_pool'
+      ip_range: '{{ ip_range }}'
+      subnet: '{{ netmask }}'
+      default_gateway: '{{ gateway }}'
+      domain_name: '{{ domain }}'
+      dns_server_1: '{{ dns1_ip }}'
+      dns_server_2: '{{ dns2_ip }}'
+      lease_time: '{{ lease_time }}'
+      next_server: '{{ tftp_server }}'
+      bootfile: '{{ bootfile }}'
+```
 
 ### Module `nsx_dlr`
 ##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX

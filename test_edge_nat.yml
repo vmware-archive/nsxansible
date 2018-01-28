@@ -1,0 +1,44 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - nsxanswer.yml
+
+  tasks:
+  - name: Create SSH DNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'create'
+      name: '{{ edge_name }}'
+      description: 'Ansible created DNAT rule'
+      loggingEnabled: 'true'
+      rule_type: 'dnat'
+      vnic: '0'
+      protocol: 'tcp'
+      originalAddress: '10.0.0.1'
+      originalPort: '22'
+      translatedAddress: '192.168.0.2'
+      translatedPort: '22'
+
+  - name: Create default outbound SNAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'create'
+      name: '{{ edge_name }}'
+      description: 'Ansible created SNAT rule'
+      loggingEnabled: 'true'
+      rule_type: 'snat'
+      vnic: '0'
+      protocol: 'any'
+      originalAddress: '192.168.0.0/20'
+      originalPort: 'any'
+      translatedAddress: '10.0.0.1'
+      translatedPort: 'any'
+
+  - name: Delete NAT rule
+    nsx_edge_nat:
+      nsxmanager_spec: '{{ nsxmanager_spec }}'
+      mode: 'delete'
+      name: '{{ edge_name }}'
+      ruleId: '192622'

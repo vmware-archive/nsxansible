@@ -38,6 +38,8 @@ def get_mo(content, searchedname, vim_type_list):
     for object in mo:
         if object.name == searchedname:
             return object
+	elif re.search( searchedname, object.name ):
+            return object
     return None
 
 def main():
@@ -84,8 +86,9 @@ def main():
             module.fail_json(msg='Could not find {} in vCenter'.format(module.params[searched_parameter]))
 
     object_id = object_mo._moId
+    object_name = object_mo.name
 
-    module.exit_json(changed=False, object_id=object_id, datacenter_moid=datacenter_moid)
+    module.exit_json(changed=False, object_id=object_id, object_name=object_name, datacenter_moid=datacenter_moid)
 
 from ansible.module_utils.basic import *
 from ansible.module_utils.vmware import *
