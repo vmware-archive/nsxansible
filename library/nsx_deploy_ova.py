@@ -88,6 +88,16 @@ def connect_to_api(vchost, vc_user, vc_pwd):
     return service_instance.RetrieveContent()
 
 
+def check_ova_mgmt_net_name(ova_details):
+    _,_,rest = ova_details.partition('Networks:\n')
+    result,_,_ = rest.partition('Virtual Machines:\n')
+    for line in result.splitlines():
+        line_lst = line.split(':')
+        if line_lst:
+            if line_lst[0].strip() == 'Name':
+                return line_lst[1].strip()
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -146,11 +156,16 @@ def main():
                                                    module.params['vcenter_passwd'], module.params['vcenter'],
                                                    module.params['datacenter'], module.params['cluster'])
 
+    ova_tool_result = module.run_command([ovftool_exec, ova_file])
+    if ova_tool_result[0] != 0:
+        module.fail_json(msg='Failed to read OVA properties, error message from ovftool is: {}'.format(ova_tool_result[1]))
+    mgmt_net_name = check_ova_mgmt_net_name(ova_tool_result[1])
+
     ova_tool_result = module.run_command([ovftool_exec, '--acceptAllEulas', '--skipManifestCheck',
                                           '--powerOn', '--noSSLVerify', '--allowExtraConfig',
                                           '--diskMode={}'.format(module.params['disk_mode']),
                                           '--datastore={}'.format(module.params['datastore']),
-                                          '--net:VSMgmt={}'.format(module.params['portgroup']),
+                                          '--net:{}={}'.format(mgmt_net_name, module.params['portgroup']),
                                           '--name={}'.format(module.params['vmname']),
                                           '--prop:vsm_hostname={}'.format(module.params['hostname']),
                                           '--prop:vsm_dns1_0={}'.format(module.params['dns_server']),
