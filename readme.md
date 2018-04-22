@@ -310,6 +310,8 @@ lab, single of full, defaults to full
  - lab: Only a single controller gets deployed. If there are already controllers deployed in the setup, 'lab' will leave the environment unchanged, and will only apply changes to syslog if needed
  - single: This will create a new controller if the number of existing controllers in the setup is 0, 1 or 2. If the number of existing controllers is 3, 'single'  will leave the environment unchanged, and only apply changes to syslog if needed. You can use this option if you want to deploy a controller cluster with individual nodes placed into e.g. different datastores, clusters or networks
  - full: This will create a full cluster of 3 controller nodes. If there is any existing controller found, 'full' will leave the environment unchanged and only apply changes to syslog if needed. Use this option if you want to deploy a full 3 node cluster, and all node should be placed on the the same datastore, cluster, network, etc.
+- name:
+Optional: Name to be used for the Controller (This will be seen as a prefix in the NSX-UI). Defaults to 'Ansible'
 - syslog_server:
 Optional: This will set the syslog server on **all** controller nodes found in the setup.
   - If not set or left out in the play: If no value is set, but existing controllers have syslog configured, all controller syslog configuration will be blanked out
@@ -342,6 +344,7 @@ Example:
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       deploytype: 'lab'
+      name: 'Lab-Ctrl'
       syslog_server: '172.17.100.129'
       ippool_id: 'ipaddresspool-2'
       resourcepool_moid: 'domain-c26'

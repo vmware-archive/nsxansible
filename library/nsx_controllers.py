@@ -24,6 +24,7 @@ def get_controller_cluster_info(session):
 
 def create_controllers(session, controller_count, module):
     controller_spec = session.extract_resource_body_example('nsxControllers', 'create')
+    controller_spec['controllerSpec']['name'] = module.params['name']
     controller_spec['controllerSpec']['datastoreId'] = module.params['datastore_moid']
     controller_spec['controllerSpec']['networkId'] = module.params['network_moid']
     controller_spec['controllerSpec']['resourcePoolId'] = module.params['resourcepool_moid']
@@ -34,13 +35,15 @@ def create_controllers(session, controller_count, module):
 
     for controller_nr in range(controller_count):
         job_id = session.create('nsxControllers', request_body_dict=controller_spec)['body']
-
         status_poll_count = 0
         while status_poll_count < 20:
             response = session.read('nsxControllerJob', uri_parameters={'jobId': job_id})
             status = response['body']['controllerDeploymentInfo']['status']
             if status == 'Success':
-                break
+                if wait_for_stable_cluster(session):
+                    break
+                else:
+                    return False
             elif status == 'Failure':
                 return False
             else:
@@ -60,6 +63,30 @@ def get_controller_id_list(controller_cluster):
         return [controller_cluster['controllers']['controller']['id']]
     elif type(controller_cluster['controllers']['controller']) is list:
         return [controller_ids['id'] for controller_ids in controller_cluster['controllers']['controller']]
+
+
+def get_controller_status_list(controller_cluster):
+    if not controller_cluster['controllers']:
+        return []
+    if type(controller_cluster['controllers']['controller']) is dict:
+        return [controller_cluster['controllers']['controller']['status']]
+    elif type(controller_cluster['controllers']['controller']) is list:
+        return [controller_status['status'] for controller_status in controller_cluster['controllers']['controller']]
+
+
+def wait_for_stable_cluster(session):
+    status_poll_count = 0
+    while status_poll_count < 25:
+        controllers_raw = session.read('nsxControllers')['body']
+        controllers = get_controller_status_list(controllers_raw)
+        result_set = set(['DEPLOYING', 'REMOVING', 'UNKNOWN']) & set(controllers)
+        if len(result_set) != 0:
+            status_poll_count += 1
+            time.sleep(30)
+        else:
+            return True
+    if status_poll_count == 25:
+        return False
 
 
 def delete_controller_cluster(session, controller_id_list):
@@ -100,6 +127,7 @@ def main():
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             deploytype=dict(default='full', choices=['single', 'full', 'lab']),
             deploysize=dict(default='small', choices=['small', 'medium', 'large']),
+            name=dict(default='Ansible', type='str'),
             syslog_server=dict(),
             ippool_id=dict(required=True),
             resourcepool_moid=dict(required=True),
