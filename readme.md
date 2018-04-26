@@ -771,7 +771,7 @@ routes:
 ```
 
 ### Module `nsx_edge_nat`
-##### Deploys or deletes a NAT rule in an Edge Service Gateway
+##### Create, delete, or append a NAT rule in an Edge Service Gateway
 
 - name:
 Mandatory: name of the Edge Services Gateway to be modified
@@ -810,42 +810,68 @@ Optional: This can be used to specify user-controlled ruleId. Must be between 65
 - description:
 Optional: User-defined description field.
 
-##### Create NAT rule
+##### Create NAT rules
+
+This method will remove any existing NAT rules on the Edge and replace them with the defined set.
 
 Example:
 ```yml
   tasks:
-  - name: Create SSH Bastion host DNAT rule
-    nsx_edge_nat:
-      nsxmanager_spec: '{{ nsxmanager_spec }}'
-      mode: 'create'
-      name: '{{ edge_name }}'
-      description: 'Ansible created inbound SSH'
-      loggingEnabled: 'true'
-      rule_type: 'dnat'
-      vnic: '0'
-      protocol: 'tcp'
-      originalAddress: '10.180.138.131'
-      originalPort: '22'
-      translatedAddress: '192.168.0.2'
-      translatedPort: '22'
+  - name: Create NAT rules
+      nsx_edge_nat:
+        nsxmanager_spec: '{{ nsxmanager_spec }}'
+        mode: 'create'
+        name: '{{ edge_name }}'
+        rules:
+          dnat0: { description: 'Ansible created HTTP NAT rule',
+              loggingEnabled: 'true',
+              rule_type: 'dnat',
+              nat_enabled: 'true',
+              dnatMatchSourceAddress: 'any',
+              dnatMatchSourcePort: 'any',
+              vnic: '0',
+              protocol: 'tcp',
+              originalAddress: '10.180.138.131',
+              originalPort: '80',
+              translatedAddress: '192.168.0.2',
+              translatedPort: '80'
+            }
+          dnat1: { description: 'Ansible created HTTPS NAT rule',
+              loggingEnabled: 'true',
+              rule_type: 'dnat',
+              vnic: '0',
+              nat_enabled: 'true',
+              dnatMatchSourceAddress: 'any',
+              dnatMatchSourcePort: 'any',
+              protocol: 'tcp',
+              originalAddress: '10.180.138.131',
+              originalPort: '443',
+              translatedAddress: '192.168.0.2',
+              translatedPort: '443'
+            }
 
-  - name: Create default outbound SNAT rule
-    nsx_edge_nat:
-      nsxmanager_spec: '{{ nsxmanager_spec }}'
-      mode: 'create'
-      name: '{{ edge_name }}'
-      description: 'Ansible created default outbound'
-      loggingEnabled: 'true'
-      rule_type: 'snat'
-      vnic: '0'
-      protocol: 'any'
-      originalAddress: '192.168.0.0/20'
-      originalPort: 'any'
-      translatedAddress: '10.180.138.131'
-      translatedPort: 'any'
 ```
 
+##### Append NAT rule
+
+Example:
+```yml
+  tasks:
+    - name: Add new HTTP DNAT rule
+      nsx_edge_nat:
+        nsxmanager_spec: '{{ nsxmanager_spec }}'
+        mode: 'append'
+        name: '{{ edge_name }}'
+        description: 'Ansible created NAT rule'
+        loggingEnabled: 'true'
+        rule_type: 'dnat'
+        vnic: '0'
+        protocol: 'tcp'
+        originalAddress: '10.180.138.131'
+        originalPort: '8888'
+        translatedAddress: '192.168.0.2'
+        translatedPort: '8888'
+```
 ##### Delete NAT rule
 
 Example:
