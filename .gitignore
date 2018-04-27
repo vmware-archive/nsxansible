@@ -4,6 +4,9 @@ ansible.cfg
 answerfile_TPM_Lab.yml
 answerfile_TPM_Lab_deploy.yml
 deployNsx_TPM_Lab.yml
-hosts
+hosts-one-cloud
+deployNsx_OneCloud.yml
+answerfile_OneCloud_deploy.yml
+deployNsx_OneCloud.yml
 .gitignore
 *.retry

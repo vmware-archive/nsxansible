@@ -27,6 +27,19 @@ def change_vc_config(session, body_dict):
     return session.update('vCenterConfig', request_body_dict=body_dict)
 
 
+def get_hash_algorithm(session):
+    global_info = session.read('globalInfo')['body']['globalInfo']['versionInfo']
+    major_ver = int(global_info.get('majorVersion', 0))
+    minor_ver = int(global_info.get('minorVersion', 0))
+    if major_ver <= 6:
+        if minor_ver >= 4:
+            return 'sha256'
+        else:
+            return 'sha1'
+    else:
+        return 'sha256'
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -48,12 +61,14 @@ def main():
     s = NsxClient(module.params['nsxmanager_spec']['raml_file'], module.params['nsxmanager_spec']['host'],
                   module.params['nsxmanager_spec']['user'], module.params['nsxmanager_spec']['password'])
 
+    hash_algorithm = get_hash_algorithm(s)
+
     vc_config = retrieve_vc_config(s)
 
     api_cert = ssl.get_server_certificate((module.params['vcenter'], 443),
                                           ssl_version=2)
     x509_api = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, api_cert)
-    api_cert_thumbp = x509_api.digest('sha1')
+    api_cert_thumbp = x509_api.digest(hash_algorithm)
 
     if module.params['accept_all_certs']:
         module.params['vccertthumbprint'] = api_cert_thumbp

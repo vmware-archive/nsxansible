@@ -1,6 +1,6 @@
 ---
 - name: Deploy NSX OVA
-  hosts: jumphost 
+  hosts: jumphost
   gather_facts: False
   vars_files:
     - answerfile-deployLab.yml
@@ -9,8 +9,7 @@
   tags: nsx_ova
 
 - name: Base NSX Deployment (Install)
-  hosts: localhost
-  connection: local
+  hosts: jumphost
   gather_facts: False
   vars_files:
     - answerfile-deployLab.yml

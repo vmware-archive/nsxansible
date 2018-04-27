@@ -28,26 +28,22 @@ def get_cluster_status(session, cluster_moid):
 
 
 def vxlan_prep(session, cluster_moid, dvs_moid, ipaddresspool, vlan_id, vmknics, teaming, mtu):
-    vxlan_prep_dvs = session.extract_resource_body_example('nwfabricConfig', 'create')
-    vxlan_prep_dvs['nwFabricFeatureConfig']['resourceConfig']['resourceId'] = dvs_moid
-    vxlan_prep_dvs['nwFabricFeatureConfig']['featureId'] = 'com.vmware.vshield.vsm.vxlan'
-    vxlan_prep_dvs['nwFabricFeatureConfig']['resourceConfig'].update({'configSpec': {'@class': 'vdsContext',
-                                                                                     'switch': {'objectId': dvs_moid},
-                                                                                     'mtu': mtu,
-                                                                                     'teaming': teaming}})
-    session.create('nwfabricConfig', request_body_dict=vxlan_prep_dvs)
+    vxlan_prep = session.extract_resource_body_example('nwfabricConfig', 'create')
+    vxlan_prep['nwFabricFeatureConfig']['resourceConfig']['resourceId'] = cluster_moid
+    vxlan_prep['nwFabricFeatureConfig']['featureId'] = 'com.vmware.vshield.vsm.vxlan'
+    vxlan_prep['nwFabricFeatureConfig']['resourceConfig'] = [{'resourceId': cluster_moid,
+                                                              'configSpec': {'@class': 'vdsContext',
+                                                                             'switch': {'objectId': dvs_moid},
+                                                                             'mtu': mtu,
+                                                                             'teaming': teaming}},
+                                                             {'resourceId': cluster_moid,
+                                                              'configSpec': {'@class': 'clusterMappingSpec',
+                                                                             'switch': {'objectId': dvs_moid},
+                                                                             'vlanId': vlan_id,
+                                                                             'vmknicCount': vmknics,
+                                                                             'ipPoolId': ipaddresspool}}]
 
-    vxlan_prep_cluster = session.extract_resource_body_example('nwfabricConfig', 'create')
-    vxlan_prep_cluster['nwFabricFeatureConfig']['resourceConfig']['resourceId'] = cluster_moid
-    vxlan_prep_cluster['nwFabricFeatureConfig']['featureId'] = 'com.vmware.vshield.vsm.vxlan'
-    vxlan_prep_cluster['nwFabricFeatureConfig']['resourceConfig'].update({'configSpec': {'@class': 'clusterMappingSpec',
-                                                                                         'switch': {'objectId':
-                                                                                                    dvs_moid},
-                                                                                         'vlanId': vlan_id,
-                                                                                         'vmknicCount': vmknics,
-                                                                                         'ipPoolId': ipaddresspool}})
-
-    vxlan_prep_cluster_response = session.create('nwfabricConfig', request_body_dict=vxlan_prep_cluster)
+    vxlan_prep_cluster_response = session.create('nwfabricConfig', request_body_dict=vxlan_prep)
     return vxlan_prep_cluster_response['objectId']
 
 
