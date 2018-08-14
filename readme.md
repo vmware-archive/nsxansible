@@ -238,6 +238,39 @@ Example:
 #  - debug: var=register_to_sso
 ```
 
+### Module `nsx_manage_roles`
+##### Configures user role permission within NSX Manager
+
+- state:
+present or absent, defaults to present
+- name:
+Mandatory: User ID. To specify a domain user, use user@domain not domain\user
+- role_type:
+User assigned role. Possible roles are super_user, vshield_admin, enterprise_admin, security_admin, auditor
+- is_group:
+Set to true to apply to a group; set to false to apply to an individual user. Default is false.
+- mode:
+Mandatory: Create, modify, delete or query
+
+Example:
+```yaml
+---
+- hosts: all
+  connection: local
+  gather_facts: False
+
+  tasks:
+    - name: Configure NSX Manager roles
+      nsx_manager_roles:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: present
+        name: "{{ nsx_uid }}"
+        mode: modify
+        is_group: "{{ nsx_role_group }}"
+        role_type: "{{ nsx_role }}"
+      register: add_nsx_role
+```
+
 ### Module `nsx_ippool`
 ##### Create, update and delete an IP Pool in NSX Manager
 
