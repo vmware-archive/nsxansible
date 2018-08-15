@@ -19,8 +19,6 @@
 
 __author__ = 'virtualelephant'
 
-import requests, ssl
-
 try:
     from pyVmomi import vim, vmodl
     from pyVmomi.connect import SmartConnect
@@ -28,6 +26,8 @@ try:
 
 except ImportError:
     HAS_PYVMOMI = False
+
+from ansible.module_utils.basic import *
 
 def get_user_role(client_session, user_id):
     """
@@ -37,29 +37,26 @@ def get_user_role(client_session, user_id):
 
     cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
 
-    if cfg_result['status'] == 204:
-        return True
-    else:
-        return False
+    return cfg_result
 
-def create_user_role(client_session, user_id, role_type):
+def update_user_role(client_session, user_id, role_type):
     """
     :param client_session: An instance of an NsxClient session
     :param user_id: The userId. To specify a domain user, use user@domain not domain\user
     :param role_type: Users assigned role. Possible roles are super_user, vshield_admin, enterprise_admin, security_admin, auditor
     """
 
-    role_body_dict = {'role': role_type}
+    role_body_dict = { 'role': role_type }
 
     cfg_result = client_session.update('userRoleMgmt', uri_parameters={'userId': user_id},
                                                        request_body_dict={'accessControlEntry': role_body_dict})
 
-    if cfg_result['status'] == 204:
+    if cfg_result['status'] == 200:
         return True
     else:
         return False
 
-def modify_user_role(client_session, user_id, role_type, is_group):
+def create_user_role(client_session, user_id, role_type, is_group):
     """
     :param client_session: An instance of an NsxClient session
     :param user_id: The userId. To specify a domain user, use user@domain not domain\user
@@ -94,10 +91,9 @@ def delete_user_role(client_session, user_id):
 def main():
     module = AnsibleModule(
             argument_spec=dict(
-                state=dict(default='present', choices=['present', 'absent']),
+                state=dict(default='present', choices=['present', 'update', 'absent']),
                 nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
                 name=dict(required=True),
-                mode=dict(required=True, choices=['query', 'modify', 'create', 'delete']),
                 is_group=dict(default='false', choices=['true', 'false']),
                 role_type=dict(choices=['super_user', 'vshield_admin', 'security_admin', 'auditor', 'enterprise_admin'])
             ),
@@ -112,23 +108,19 @@ def main():
                                module.params['nsxmanager_spec']['password'])
 
     changed = False
-
-    if module.params['mode'] == 'query':
-        changed = get_user_role(client_session, module.params['name'])
-    elif module.params['mode'] == 'create':
-        changed = create_user_role(client_session, module.params['name'], module.params['role_type'])
-    elif module.params['mode'] == 'modify':
-        changed = modify_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
-    elif module.params['mode'] == 'delete':
-        changed = delete_user_role(client_session, module.params['name'])
     
+    if module.params['state'] == 'present':
+        changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
+    elif module.params['state'] == 'update':
+        changed = update_user_role(client_session, module.params['name'], module.params['role_type'])        
+    elif module.params['state'] == 'absent':
+        changed = delete_user_role(client_session, module.params['name'])
 
-    if changed:
-        module.exit_json(changed=True)
-    else:
-        module.exit_json(changed=False)
-
-from ansible.module_utils.basic import *
+    module.exit_json(changed=changed)
+    #if changed:
+    #    module.exit_json(changed=True)
+    #else:
+    #    module.exit_json(changed=False)
 
 if __name__ == '__main__':
     main()
