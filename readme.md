@@ -240,7 +240,7 @@ Example:
 #  - debug: var=register_to_sso
 ```
 
-### Module `nsx_manage_roles`
+### Module `nsx_manager_roles`
 ##### Configures user role permission within NSX Manager
 
 - state:
