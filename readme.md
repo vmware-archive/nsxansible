@@ -730,7 +730,7 @@ Mandatory: name of the Edge Services Gateway to be deployed
 Optional: present or absent, defaults to present
 - description:
 Optional: A free text description for the ESG
-- appliance size:
+- appliance_size:
 Optional: The ESG size, choices=['compact', 'large', 'xlarge', 'quadlarge'], defaults to 'large'
 - resourcepool_moid:
 Mandatory: The vCenter MOID of the ressource pool to deploy the ESG in
