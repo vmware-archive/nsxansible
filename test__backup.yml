@@ -1,0 +1,35 @@
+
+---
+
+- name: Configuring NSX Manager Backup
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_deploy.yml
+
+  tasks:
+
+  - name: Configuring NSX Manager Backup settings
+    nsx_backup:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ftpuser'
+      password: 'P@ssw0rd'
+      transfer_protocol: 'SFTP'  #choices = ['FTP,'SFTP']
+      ip_addr: '172.16.30.65'
+      port: '21'
+      backup_directory: 'backups'
+      file_name_prefix: 'new-'
+      pass_phrase: 'mypassphrase'
+      backup_schedule:
+        - { 'frequency': 'weekly', 'dayOfWeek': 'tuesday', 'hourOfDay': '2', 'minuteOfHour': '15' }
+        - { 'frequency': 'daily', 'hourOfDay': '2', 'minuteOfHour': '15' }
+        - { 'frequency': 'HOURLY', 'minuteOfHour': '15' }   
+      exclude_list:      #choices =  "AUDIT_LOGS", "SYSTEM_EVENTS", "FLOW_RECORDS"
+        - "AUDIT_LOGS"
+        - "SYSTEM_EVENTS"
+        - "FLOW_RECORDS"
+    register: backup_settings
+
+  #- debug: var=backup_settings
