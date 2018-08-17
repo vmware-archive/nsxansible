@@ -20,7 +20,7 @@
       graceful_restart: "{{ esg1.graceful_restart }}"
       router_id: "{{ esg1.router_id }}"
       ecmp: "{{ esg1.ecmp }}"
-      bgp_neighbors:
+      bgp_neighbours:
         - { 'ipAddress': "{{ esg1.bgp.n1.ipaddress }}", 'remoteAS': "{{ esg1.bgp.n1.remoteas }}"}
         - { 'ipAddress': "{{ esg1.bgp.n2.ipaddress }}", 'remoteAS': "{{ esg1.bgp.n2.remoteas }}"}
         - { 'ipAddress': "{{ esg1.bgp.n3.ipaddress }}", 'remoteAS': "{{ esg1.bgp.n3.remoteas }}"}
@@ -38,7 +38,7 @@
       graceful_restart: "{{ esg2.graceful_restart }}"
       router_id: "{{ esg2.router_id }}"
       ecmp: "{{ esg2.ecmp }}"
-      bgp_neighbors:
+      bgp_neighbours:
         - { 'ipAddress': "{{ esg2.bgp.n1.ipaddress }}", 'remoteAS': "{{ esg2.bgp.n1.remoteas }}"}
         - { 'ipAddress': "{{ esg2.bgp.n2.ipaddress }}", 'remoteAS': "{{ esg2.bgp.n2.remoteas }}"}
         - { 'ipAddress': "{{ esg2.bgp.n3.ipaddress }}", 'remoteAS': "{{ esg2.bgp.n3.remoteas }}"}
@@ -54,7 +54,7 @@
       router_id: "{{ dlr.router_id }}"
       graceful_restart: "{{ dlr.graceful_restart }}"
       ecmp: "{{ dlr.ecmp }}"
-      bgp_neighbors:
+      bgp_neighbours:
         - { 'ipAddress': "{{ dlr.bgp.n1.ipaddress }}", 'remoteAS': "{{ dlr.bgp.n1.remoteas }}", 'forwardingAddress': "{{ dlr.vnic0.ip }}", 'protocolAddress': "{{ dlr.protocol_address }}" }
         - { 'ipAddress': "{{ dlr.bgp.n2.ipaddress }}", 'remoteAS': "{{ dlr.bgp.n2.remoteas }}", 'forwardingAddress': "{{ dlr.vnic0.ip }}", 'protocolAddress': "{{ dlr.protocol_address }}"}
     register: bgp_dlr

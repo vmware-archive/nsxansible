@@ -108,92 +108,92 @@ def check_bgp_options(current_config, resource_body, graceful_restart):
         return changed, resource_body
 
 
-def normalize_neighbor_list(neighbor_list):
-    new_neighbor_list = []
+def normalize_neighbour_list(neighbour_list):
+    new_neighbour_list = []
 
-    if neighbor_list:
-        for neighbor in neighbor_list:
+    if neighbour_list:
+        for neighbour in neighbour_list:
 
-            if not isinstance(neighbor, dict):
-                return False, 'neighbor_list {} is not a valid dictionary'.format(neighbor)
+            if not isinstance(neighbour, dict):
+                return False, 'Neighbour_list {} is not a valid dictionary'.format(neighbour)
 
-            if neighbor.get('ipAddress', 'missing') == 'missing':
-                return False, 'neighbor list entry {} in your list is missing the mandatory ipAddress parameter'.format(neighbor.get('ipAddress', None))
+            if neighbour.get('ipAddress', 'missing') == 'missing':
+                return False, 'Neighbour list entry {} in your list is missing the mandatory ipAddress parameter'.format(neighbour.get('ipAddress', None))
             else:
-                neighbor['ipAddress'] = str(neighbor['ipAddress'])
+                neighbour['ipAddress'] = str(neighbour['ipAddress'])
 
-            if neighbor.get('remoteAS', 'missing') == 'missing':
-                return False, 'neighbor list entry {} in your list is missing the mandatory remoteAS parameter'.format(neighbor.get('remoteAS', None))
+            if neighbour.get('remoteAS', 'missing') == 'missing':
+                return False, 'Neighbour list entry {} in your list is missing the mandatory remoteAS parameter'.format(neighbour.get('remoteAS', None))
             else:
-                neighbor['remoteAS'] = str(neighbor['remoteAS'])
+                neighbour['remoteAS'] = str(neighbour['remoteAS'])
 
-            if neighbor.get('protocolAddress', 'missing') == 'missing':
-                return False, 'neighbor list entry {} in your list is missing the mandatory protocolAddress parameter'.format(neighbor.get('protocolAddress', None))
+            if neighbour.get('protocolAddress', 'missing') == 'missing':
+                return False, 'Neighbour list entry {} in your list is missing the mandatory protocolAddress parameter'.format(neighbour.get('protocolAddress', None))
             else:
-                neighbor['protocolAddress'] = str(neighbor['protocolAddress'])
+                neighbour['protocolAddress'] = str(neighbour['protocolAddress'])
 
-            if neighbor.get('forwardingAddress', 'missing') == 'missing':
-                return False, 'neighbor list entry {} in your list is missing the mandatory forwardingAddress parameter'.format(neighbor.get('forwardingAddress', None))
+            if neighbour.get('forwardingAddress', 'missing') == 'missing':
+                return False, 'Neighbour list entry {} in your list is missing the mandatory forwardingAddress parameter'.format(neighbour.get('forwardingAddress', None))
             else:
-                neighbor['forwardingAddress'] = str(neighbor['forwardingAddress'])
+                neighbour['forwardingAddress'] = str(neighbour['forwardingAddress'])
 
-            if neighbor.get('bgpFilters', 'missing') == 'missing':
-                neighbor['bgpFilters'] = None
+            if neighbour.get('bgpFilters', 'missing') == 'missing':
+                neighbour['bgpFilters'] = None
             else:
                 pass
 
-            if neighbor.get('holdDownTimer', 'missing') == 'missing':
-                neighbor['holdDownTimer'] = '180'
+            if neighbour.get('holdDownTimer', 'missing') == 'missing':
+                neighbour['holdDownTimer'] = '180'
             else:
-                neighbor['holdDownTimer'] = str(neighbor['holdDownTimer'])
+                neighbour['holdDownTimer'] = str(neighbour['holdDownTimer'])
 
-            if neighbor.get('weight', 'missing') == 'missing':
-                neighbor['weight'] = '60'
-
-            else:
-                neighbor['weight'] = str(neighbor['weight'])
-
-            if neighbor.get('remoteASNumber', 'missing') == 'missing':
-                neighbor['remoteASNumber'] = neighbor['remoteAS']
+            if neighbour.get('weight', 'missing') == 'missing':
+                neighbour['weight'] = '60'
 
             else:
-                neighbor['remoteASNumber'] = str(neighbor['remoteASNumber'])
+                neighbour['weight'] = str(neighbour['weight'])
 
-            if neighbor.get('keepAliveTimer', 'missing') == 'missing':
-                neighbor['keepAliveTimer'] = '60'
+            if neighbour.get('remoteASNumber', 'missing') == 'missing':
+                neighbour['remoteASNumber'] = neighbour['remoteAS']
 
             else:
-                neighbor['keepAliveTimer'] = str(neighbor['keepAliveTimer'])
-            new_neighbor_list.append(neighbor)
+                neighbour['remoteASNumber'] = str(neighbour['remoteASNumber'])
 
-    return True, None, new_neighbor_list
+            if neighbour.get('keepAliveTimer', 'missing') == 'missing':
+                neighbour['keepAliveTimer'] = '60'
+
+            else:
+                neighbour['keepAliveTimer'] = str(neighbour['keepAliveTimer'])
+            new_neighbour_list.append(neighbour)
+
+    return True, None, new_neighbour_list
 
 
-def check_bgp_neighbors(client_session, current_config, resource_body, bgp_neighbors):
+def check_bgp_neighbours(client_session, current_config, resource_body, bgp_neighbours):
     changed = False
 
     if 'bgp' in current_config['routing']:
-        if current_config['routing']['bgp']['bgpneighbors']:
-            c_neighbor_list = client_session.normalize_list_return(current_config['routing']['bgp']['bgpneighbors']['bgpneighbor'])
+        if current_config['routing']['bgp']['bgpNeighbours']:
+            c_neighbour_list = client_session.normalize_list_return(current_config['routing']['bgp']['bgpNeighbours']['bgpNeighbour'])
         else:
-            c_neighbor_list = []
+            c_neighbour_list = []
 
-        for items in bgp_neighbors:
-            if not items in c_neighbor_list:
-                c_neighbor_list.append(items)
+        for items in bgp_neighbours:
+            if not items in c_neighbour_list:
+                c_neighbour_list.append(items)
 
-        resource_body['bgp']['bgpneighbors'] = {'bgpneighbor': c_neighbor_list}
+        resource_body['bgp']['bgpNeighbours'] = {'bgpNeighbour': c_neighbour_list}
         changed = True
 
         return changed, current_config, resource_body
 
     else:
-        c_neighbor_list = []
+        c_neighbour_list = []
 
-        for new_neighbor in bgp_neighbors:
-            c_neighbor_list.append(new_neighbor)
+        for new_neighbour in bgp_neighbours:
+            c_neighbour_list.append(new_neighbour)
 
-        resource_body['bgp']['bgpneighbors'] = {'bgpneighbor': c_neighbor_list}
+        resource_body['bgp']['bgpNeighbours'] = {'bgpNeighbour': c_neighbour_list}
         changed = True
 
         return changed, current_config, resource_body
@@ -232,7 +232,7 @@ def main():
             router_id=dict(required=True, type='str'),
             ecmp=dict(default='false', choices=['true', 'false']),
             localas=dict(required=True, type='str'),
-            bgp_neighbors=dict(required=True, type='list'),
+            bgp_neighbours=dict(required=True, type='list'),
         ),
         supports_check_mode=False
     )
@@ -262,13 +262,13 @@ def main():
     changed_ecmp, current_config = check_ecmp(current_config, module.params['ecmp'])
     changed_rtid, current_config = check_router_id(current_config, module.params['router_id'])
 
-    valid, msg, neighbor_list = normalize_neighbor_list(module.params['bgp_neighbors'])
+    valid, msg, neighbour_list = normalize_neighbour_list(module.params['bgp_neighbours'])
     if not valid:
 	      module.fail_json(msg=msg)
 
-    changed_neighbors, current_config, resource_body = check_bgp_neighbors(client_session, current_config, resource_body, neighbor_list)
+    changed_neighbours, current_config, resource_body = check_bgp_neighbours(client_session, current_config, resource_body, neighbour_list)
 
-    if (changed_state or changed_as or changed_opt or changed_neighbors or changed_rtid or changed_ecmp):
+    if (changed_state or changed_as or changed_opt or changed_neighbours or changed_rtid or changed_ecmp):
         update_config(client_session, current_config, edge_id)
         update_config_bgp(client_session, resource_body, edge_id)
         module.exit_json(changed=True, current_config=current_config, resource_body=resource_body)
