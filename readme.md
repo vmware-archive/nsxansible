@@ -130,8 +130,6 @@ Mandatory: Password of the vCenter
 - license_key:
 Mandatory: License to be added and attached to NSX
 
-*Note: `vcenter_nsx_license` should only be run after `vcenter_vc_registation` is complete.*
-
 Example:
 ```yaml
 ---
@@ -238,66 +236,6 @@ Example:
     register: register_to_sso
 
 #  - debug: var=register_to_sso
-```
-
-### Module `nsx_manager_roles`
-##### Configures user role permission within NSX Manager
-
-- state:
-present, update, or absent, defaults to present
-- name:
-Mandatory: User ID. To specify a domain user, use user@domain not domain\user
-- role_type:
-User assigned role. Possible roles are super_user, vshield_admin, enterprise_admin, security_admin, auditor
-- is_group:
-Set to true to apply to a group; set to false to apply to an individual user. Default is false.
-
-Example:
-```yaml
----
-- hosts: all
-  connection: local
-  gather_facts: False
-
-  tasks:
-    - name: Configure NSX Manager roles
-      nsx_manager_roles:
-        nsxmanager_spec: "{{ nsxmanager_spec }}"
-        state: present
-        name: "{{ nsx_uid }}"
-        is_group: "{{ nsx_role_group }}"
-        role_type: "{{ nsx_role }}"
-      register: add_nsx_role
-```
-
-### Module `nsx_manager_syslog`
-##### Add and delete a syslog server configuration in NSX Manager
-
-- state:
-present or absent, defaults to present
-- syslog_server:
-Mandatory: FQDN or IP address of remote syslog server
-- syslog_port:
-Remote syslog server port. Defaults to 514
-- syslog_protocol:
-Remote syslog server protocol. Choices are udp or tcp. Defaults to udp.
-
-Example:
-```yaml
----
-- hosts: all
-  connection: local
-  gather_facts: False
-
-  tasks:
-    - name: Configure NSX Manager syslog
-      nsx_manager_syslog:
-        nsxmanager_spec: "{{ nsxmanager_spec }}"
-        state: present
-        syslog_server: "{{ syslog_server }}"
-        syslog_port: "{{ syslog_port }}"
-        syslog_protocol: "{{ syslog_protocol }}"
-      register: nsxv_syslog 
 ```
 
 ### Module `nsx_ippool`
@@ -730,7 +668,7 @@ Mandatory: name of the Edge Services Gateway to be deployed
 Optional: present or absent, defaults to present
 - description:
 Optional: A free text description for the ESG
-- appliance_size:
+- appliance size:
 Optional: The ESG size, choices=['compact', 'large', 'xlarge', 'quadlarge'], defaults to 'large'
 - resourcepool_moid:
 Mandatory: The vCenter MOID of the ressource pool to deploy the ESG in
