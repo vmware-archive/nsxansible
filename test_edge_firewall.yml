@@ -1,0 +1,64 @@
+---
+- name: Testing the firewall related modules
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Add multiple firewall rules
+      nsx_edge_firewall:
+        nsxmanager_spec:
+          raml_file: "nsxraml/nsxvapi.raml"
+          host: "nsxmanager.example.com"
+          user: "admin"
+          password: "l0ngPassw0rd!!"
+        mode: "create"
+        edge_name: "dc-jp-edge-1"
+        global_config: 
+          tcpPickOngoingConnections: true
+          tcpTimeoutEstablished: 500
+          enableSynFloodProtection: false
+          ipGenericTimeout: 12000
+        default_action: deny
+        rules:
+          - name: deny_rule
+            action: deny
+            destination:
+              ipAddress:
+                - 2.2.2.2
+                - 1.1.1.1          
+            source: 
+              ipAddress: 8.8.8.8 9.9.9.9 10.10.10.10/26
+            application:
+              service:
+                - port: 
+                  - 181
+                  - 182
+                  protocol: UDP
+                  sourcePort: 53
+                - port: 15 22
+                  protocol: UDP
+                  sourcePort: 53
+
+          - name: Rule_icmp_reject
+            action: reject
+            destination:
+              ipAddress: 2.2.2.2 1.1.1.1
+            source:
+              ipAddress:
+                - 8.8.8.8
+                - 9.9.9.9
+                - 10.10.10.10/26
+            application:
+              service:
+                - port: 
+                  - 15 
+                  - 22            
+                  protocol: UDP
+                  sourcePort: 53
+                - protocol: ICMP
+                  icmpType: echo-reply
+ 
+
+          
+
+
+        
