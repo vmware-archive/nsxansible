@@ -78,6 +78,24 @@ def wait_for_job_completion(session, job_id, completion_status):
 
     return False
 
+# TODO: This will be better in module_utils as a helper method, used for both
+#       this module and the nsx_ippool one
+def get_ippool_id(session, searched_pool_name):
+    try:
+        ip_pools = session.read('ipPools',
+                                uri_parameters={'scopeId':
+                                                'globalroot-0'})['body']['ipamAddressPools']['ipamAddressPool']
+    except TypeError:
+        return None
+
+    if type(ip_pools) is dict:
+        if ip_pools['name'] == searched_pool_name:
+            return ip_pools['objectId']
+    elif type(ip_pools) is list:
+        try:
+            return [ip_pool['objectId'] for ip_pool in ip_pools if ip_pool['name'] == searched_pool_name][0]
+        except IndexError:
+            return None
 
 def main():
     module = AnsibleModule(
@@ -87,6 +105,7 @@ def main():
             cluster_moid=dict(required=True),
             dvs_moid=dict(required=True),
             ippool_id=dict(),
+            ippool_name=dict(),
             vlan_id=dict(default=0, type='int'),
             vmknic_count=dict(default=1),
             teaming=dict(default='FAILOVER_ORDER', choices=['FAILOVER_ORDER',
@@ -98,6 +117,7 @@ def main():
                                                             'LACP_V2']),
             mtu=dict(default=1600)
         ),
+        mutually_exclusive=['ippool_id', 'ippool_name'],
         supports_check_mode=False
     )
 
@@ -115,6 +135,12 @@ def main():
         module.exit_json(changed=True)
 
     if vxlan_status != 'GREEN' and module.params['state'] == 'present':
+        if module.params.get('ippool_name'):
+            # TODO: Figure out a better way to handle this
+            module.params['ippool_id'] = get_ippool_id(s, module.params['ippool_name'])
+            if not module.params['ippool_id']:
+                module.fail_json(msg='NSX IP pool not found - {}'.format(module.params['ippool_name']))
+
         vxlan_prep_response = vxlan_prep(s, module.params['cluster_moid'], module.params['dvs_moid'],
                                          module.params['ippool_id'], module.params['vlan_id'],
                                          module.params['vmknic_count'], module.params['teaming'], module.params['mtu'])
