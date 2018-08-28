@@ -10,8 +10,11 @@
       nsxmanager_spec: "{{ nsxmanager_spec }}"
       state: present
       name: 'ansible_controller_ip_pool'
-      start_ip: '172.17.100.65'
-      end_ip: '172.17.100.67'
+      ip_ranges:
+        - start_ip: '172.17.100.65'
+          end_ip: '172.17.100.67'
+        - start_ip: '172.17.100.100'
+          end_ip: '172.17.100.200'
       prefix_length: '24'
       gateway: '172.17.100.1'
       dns_server_1: '172.17.100.11'

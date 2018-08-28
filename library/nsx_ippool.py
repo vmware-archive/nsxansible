@@ -52,14 +52,37 @@ def update_ippool(session, pool_object_id, body_dict):
     return session.update('ipPool', uri_parameters={'poolId': pool_object_id}, request_body_dict=body_dict)
 
 
+def setup_ranges(new_ranges, current_ranges = None):
+    final_ranges = []
+    changed      = False
+
+    # the response is a dict when there's only one range
+    if type(current_ranges) is dict:
+        current_ranges = [current_ranges]
+
+    for curr_range in current_ranges:
+        range = { 'start_ip': curr_range['startAddress'], 'end_ip': curr_range['endAddress'] }
+
+        if range in new_ranges:
+            final_ranges.append(curr_range)
+            new_ranges.remove(range)
+        else:
+            # current range is to be removed
+            changed = True
+
+    for new_range in new_ranges:
+        final_ranges.append({ 'startAddress': new_range['start_ip'], 'endAddress': new_range['end_ip'] })
+        changed = True
+
+    return final_ranges, changed
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent']),
             nsxmanager_spec=dict(required=True, no_log=True, type='dict'),
             name=dict(required=True),
-            start_ip=dict(required=True),
-            end_ip=dict(required=True),
+            ip_ranges=dict(required=True, type='list'),
             prefix_length=dict(required=True),
             gateway=dict(),
             dns_server_1=dict(),
@@ -77,8 +100,7 @@ def main():
 
     if not ip_pool_objectid and module.params['state'] == 'present':
         new_ip_pool = s.extract_resource_body_example('ipPools', 'create')
-        new_ip_pool['ipamAddressPool']['ipRanges']['ipRangeDto']['startAddress'] = module.params['start_ip']
-        new_ip_pool['ipamAddressPool']['ipRanges']['ipRangeDto']['endAddress'] = module.params['end_ip']
+        new_ip_pool['ipamAddressPool']['ipRanges']['ipRangeDto'] = setup_ranges(module.params['ip_ranges'], [])[0]
         new_ip_pool['ipamAddressPool']['gateway'] = module.params['gateway']
         new_ip_pool['ipamAddressPool']['prefixLength'] = module.params['prefix_length']
         new_ip_pool['ipamAddressPool']['dnsServer1'] = module.params['dns_server_1']
@@ -101,16 +123,9 @@ def main():
 
     for ippool_detail_key, ippool_detail_value in ippool_config['ipamAddressPool'].iteritems():
         if ippool_detail_key == 'ipRanges':
-            for range_detail_key, range_detail_value in \
-                    ippool_config['ipamAddressPool']['ipRanges']['ipRangeDto'].iteritems():
-                if range_detail_key == 'startAddress' and range_detail_value != module.params['start_ip']:
-                    ippool_config['ipamAddressPool']['ipRanges']['ipRangeDto']['startAddress'] = \
-                        module.params['start_ip']
-                    change_required = True
-                elif range_detail_key == 'endAddress' and range_detail_value != module.params['end_ip']:
-                    ippool_config['ipamAddressPool']['ipRanges']['ipRangeDto']['endAddress'] = \
-                        module.params['end_ip']
-                    change_required = True
+            ippool_config['ipamAddressPool']['ipRanges']['ipRangeDto'], \
+                change_required = setup_ranges(module.params['ip_ranges'], \
+                                               ippool_config['ipamAddressPool']['ipRanges']['ipRangeDto'])
         elif ippool_detail_key == 'gateway' and ippool_detail_value != module.params['gateway']:
             ippool_config['ipamAddressPool']['gateway'] = module.params['gateway']
             change_required = True
