@@ -122,7 +122,22 @@ def append_nat_rules(client_session, edge_name, nat_enabled, loggingEnabled, rul
     """
     edge_id, edge_params = get_edge(client_session, edge_name)
 
+    existing_rules = client_session.read('edgeNat', uri_parameters={'edgeId': edge_id})
+    rules = existing_rules['body']['nat']['natRules']['natRule']
+
     if rule_type == 'snat':
+        for rule in rules:
+            if (
+                rule['vnic'] == vnic and rule['originalAddress'] == originalAddress and
+                    rule['ruleType'] == 'user' and rule['protocol'] == protocol and
+                    rule['loggingEnabled'] == loggingEnabled and rule['enabled'] == nat_enabled and
+                    rule['translatedAddress'] == translatedAddress and rule['snatMatchDestinationPort'] == matchPort and
+                    rule['snatMatchDestinationAddress'] == matchAddress and rule['translatedPort'] == translatedPort and
+                    rule['action'] == rule_type and rule['originalPort'] == originalPort
+            ):
+                found = True
+                break
+    
         nat_rule_dict = { 'natRule':
                             {'action': rule_type, 'vnic': vnic, 'originalAddress': originalAddress,
                              'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled,
@@ -133,6 +148,19 @@ def append_nat_rules(client_session, edge_name, nat_enabled, loggingEnabled, rul
                         }
 
     elif rule_type == 'dnat':
+        found = False
+        for rule in rules:
+            if (
+                rule['vnic'] == vnic and rule['originalAddress'] == originalAddress and
+                    rule['ruleType'] == 'user' and rule['protocol'] == protocol and
+                    rule['loggingEnabled'] == loggingEnabled and rule['enabled'] == nat_enabled and
+                    rule['translatedAddress'] == translatedAddress and rule['dnatMatchSourcePort'] == matchPort and
+                    rule['dnatMatchSourceAddress'] == matchAddress and rule['translatedPort'] == translatedPort and
+                    rule['action'] == rule_type and rule['originalPort'] == originalPort
+            ):
+                found = True
+                break
+    
         nat_rule_dict = { 'natRule':
                             {'action': rule_type, 'vnic': vnic, 'originalAddress': originalAddress,
                              'translatedAddress': translatedAddress, 'loggingEnabled': loggingEnabled,
@@ -144,8 +172,12 @@ def append_nat_rules(client_session, edge_name, nat_enabled, loggingEnabled, rul
 
     if protocol == 'icmp':
         nat_rule_dict['natRule']['icmpType'] = icmpType
+
     if ruleTag is not None:
         nat_rule_dict['natRule']['ruleTag'] = ruleTag
+    else:
+        if found:  # Rule is already present
+            return False
 
     cfg_result = client_session.create('edgeNatRules', uri_parameters={'edgeId': edge_id}, request_body_dict={'natRules': nat_rule_dict})
 
@@ -153,6 +185,7 @@ def append_nat_rules(client_session, edge_name, nat_enabled, loggingEnabled, rul
         return True
     else:
         return False
+
 
 def delete_nat_rule(client_session, edge_name, ruleId):
     """
