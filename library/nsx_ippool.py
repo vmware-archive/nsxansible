@@ -63,7 +63,8 @@ def main():
             prefix_length=dict(required=True),
             gateway=dict(),
             dns_server_1=dict(),
-            dns_server_2=dict()
+            dns_server_2=dict(),
+            dns_suffix=dict()
         ),
         supports_check_mode=False
     )
@@ -83,6 +84,7 @@ def main():
         new_ip_pool['ipamAddressPool']['prefixLength'] = module.params['prefix_length']
         new_ip_pool['ipamAddressPool']['dnsServer1'] = module.params['dns_server_1']
         new_ip_pool['ipamAddressPool']['dnsServer2'] = module.params['dns_server_2']
+        new_ip_pool['ipamAddressPool']['dnsSuffix'] = module.params['dns_suffix']
         new_ip_pool['ipamAddressPool']['name'] = module.params['name']
 
         create_response = create_ip_pool(s, new_ip_pool)
@@ -125,6 +127,9 @@ def main():
             change_required = True
         elif ippool_detail_key == 'dnsServer2' and ippool_detail_value != module.params['dns_server_2']:
             ippool_config['ipamAddressPool']['dnsServer2'] = module.params['dns_server_2']
+            change_required = True
+        elif ippool_detail_key == 'dnsSuffix' and ippool_detail_value != module.params['dns_suffix']:
+            ippool_config['ipamAddressPool']['dnsSuffix'] = module.params['dns_suffix']
             change_required = True
     if change_required:
         revision = int(ippool_config['ipamAddressPool']['revision'])

@@ -320,6 +320,8 @@ Optional: Default gateway in the IP pool.
 Optional: First DNS server in the pool.
 - dns_server_2:
 Optional: Second DNS server in the pool.
+- dns_suffix:
+Optional: DNS suffix of the pool.
 
 Returns:
 ippool_id variable will contain the IP Pool Id in NSX (e.g. "ipaddresspool-2") if the ippool is created, updates or un-changed.
@@ -345,6 +347,7 @@ Example:
       gateway: '172.17.100.1'
       dns_server_1: '172.17.100.11'
       dns_server_2: '172.17.100.12'
+      dns_suffix: 'example.com'
     register: create_ip_pool
 
   #- debug: var=create_ip_pool
