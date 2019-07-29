@@ -35,7 +35,10 @@ def get_user_role(client_session, user_id):
     :param user_id: The userId. To specify a domain user, use user@domain not domain\user
     """
 
-    cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
+    try:
+        cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
+    except:
+        cfg_result = False
 
     return cfg_result
 
@@ -108,13 +111,22 @@ def main():
                                module.params['nsxmanager_spec']['password'])
 
     changed = False
-    
-    if module.params['state'] == 'present':
-        changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
-    elif module.params['state'] == 'update':
-        changed = update_user_role(client_session, module.params['name'], module.params['role_type'])        
-    elif module.params['state'] == 'absent':
-        changed = delete_user_role(client_session, module.params['name'])
+
+    user_role = get_user_role(client_session, module.params['name'])
+
+    if user_role:
+        if module.params['state'] == 'present':
+            if module.params['role_type'] != user_role['body']['accessControlEntry']['role']:
+                changed = update_user_role(client_session, module.params['name'], module.params['role_type'])
+        elif module.params['state'] == 'update':
+            changed = update_user_role(client_session, module.params['name'], module.params['role_type'])        
+        elif module.params['state'] == 'absent':
+            changed = delete_user_role(client_session, module.params['name'])
+    else:
+        if module.params['state'] == 'present':
+            changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
+        elif module.params['state'] == 'update':
+            changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
 
     module.exit_json(changed=changed)
     #if changed:
