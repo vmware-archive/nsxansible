@@ -1341,6 +1341,120 @@ Example:
   - debug: var=create_logical_switch
 ```
 
+###  Module `nsx_certificatemanager_csr`
+##### Generate a new certificate signing request (CSR) for the NSX Manager
+
+- algorithm:
+Optional: The cryptographic algorithm to use for the creation of the private key. Defaults to RSA.
+- key_size:
+Mandatory: The key size to use for the creation of the private key. Values can be 2048, 3072, 4096.
+- common_name:
+Mandatory: The CN component of the CSR. This should match the FQDN of the NSX Manager.
+- organization_unit:
+Mandatory: The OU component of the CSR. This is the division of your organization handling the certificate.
+- organization_name:
+Mandatory: The O component of the CSR. This is the legal name of your organization. In EV and OV SSL certificates this information is verified by the CA and included in the certificate.
+- locality_name:
+Optional: The L component of the CSR. The city where your organization is located. This shouldn't be abbreviated.
+- state_name:
+Optional: The S component of the CSR. The state/region where your organization is located. This shouldn't be abbreviated.
+- country_code:
+Mandatory: The C component of the CSR. The two-letter code for the country where your organization is located. Values can be from the following list:
+```
+'AD','AE','AF','AG','AI','AL','AM','AN','AO','AQ','AR','AS',
+'AT','AU','AW','AX','AZ','BA','BB','BD','BE','BF','BG','BH',
+'BI','BJ','BL','BM','BN','BO','BQ','BR','BS','BT','BV','BW',
+'BY','BZ','CA','CC','CD','CF','CG','CH','CI','CK','CL','CM',
+'CN','CO','CR','CS','CT','CU','CV','CX','CY','CZ','DD','DE',
+'DJ','DK','DM','DO','DZ','EC','EE','EG','EH','ER','ES','ET',
+'FI','FJ','FK','FM','FO','FQ','FR','FX','GA','GB','GD','GE',
+'GF','GG','GH','GI','GL','GM','GN','GP','GQ','GR','GS','GT',
+'GU','GW','GY','HK','HM','HN','HR','HT','HU','ID','IE','IL',
+'IM','IN','IO','IQ','IR','IS','IT','JE','JM','JO','JP','JT',
+'KE','KG','KH','KI','KM','KN','KP','KR','KW','KY','KZ','LA',
+'LB','LC','LI','LK','LR','LS','LT','LU','LV','LY','MA','MC',
+'MD','ME','MF','MG','MH','MI','MK','ML','MM','MN','MO','MP',
+'MQ','MR','MS','MT','MU','MV','MW','MX','MY','MZ','NA','NC',
+'NE','NF','NG','NI','NL','NO','NP','NQ','NR','NT','NU','NZ',
+'OM','PA','PC','PE','PF','PG','PH','PK','PL','PM','PN','PR',
+'PS','PT','PU','PW','PY','PZ','QA','RE','RO','RS','RU','RW',
+'SA','SB','SC','SD','SE','SG','SH','SI','SJ','SK','SL','SM',
+'SN','SO','SR','ST','SU','SV','SY','SZ','TC','TD','TF','TG',
+'TH','TJ','TK','TL','TM','TN','TO','TR','TT','TV','TW','TZ',
+'UA','UG','UM','US','UY','UZ','VA','VC','VD','VE','VG','VI',
+'VN','VU','WF','WK','WS','YD','YE','YT','ZA','ZM','ZW'
+```
+
+The CSR will not be regenerated if the existing CSR in place has the same values as passed into the module. However if the passed in values have changed, the CSR will be re-generated and overrite the existing CSR.
+
+Returns:
+- csr_response['body'] contains the raw CSR for further processing.
+- csr_details contains the decoded CSR in human readable format.
+
+These are always returned. I.e. if the CSR is not generated the return values will be of the existing CSR in place. Check the "changed" flag to see if it was generated or not.
+
+Example:
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Generate CSR
+    nsx_certificatemanager_csr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      algorithm: "RSA"
+      key_size: 2048
+      common_name: "server.example.com"
+      organization_unit: "example"
+      organization_name: "Example Ltd."
+      locality_name: "Farnborough"
+      state_name: "Hampshire"
+      country_code: "GB"
+    register: generated_csr
+
+  - debug: var=generated_csr
+```
+
+Example return:
+```yaml
+- debug: var=generated_csr.csr_response
+```
+```sh
+ok: [localhost] => {
+    "generated_csr.csr_response": {
+        "Etag": null, 
+        "body": "-----BEGIN CERTIFICATE REQUEST-----\nMIICwjCCAaoCAQAwfTELMAkGA1UEBhMCR0IxEjAQBgNVBAgTCUhhbXBzaGlyZTEU\nMBIGA1UEBxMLRmFybmJvcm91Z2gxEDAOBgNVBAsTB2V4YW1wbGUxFTATBgNVBAoT\nDEV4YW1wbGUgTHRkLjEbMBkGA1UEAxMSc2VydmVyLmV4YW1wbGUuY29tMIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAucFsz7AbuJdVnv7QKU/yKokmiuzX\nD1MBaAcDX0UtD7qiVCZr0Fdxyva+xOZzrc9amSovD2Qkv9ejZBzlQhdS7tuk1KZx\nK/Oc3lXweSchKh82G87W+8UeqX+MuJhJ7VvhSEn0pJCPNnJ9c6rzvnOGL/pKpw2V\n7sflNx+r5A6qZE2D8ZJjnzlABDncSsttE0KcI8s4JIIpSDkscVxW+uaBKzfsywNz\nV+xhIvokPiIUubekZenp1uK2+zuk7fUYGiidstVebSSHtFkmKzOuFbrO3c/tdi3K\nSkeUZP1WoMPCmmQiBbNUSt3qKZULqzt1Y0bjnkcbZf5I6ZnWwoZV322KsQIDAQAB\noAAwDQYJKoZIhvcNAQELBQADggEBAEyuQQkpKR7B7jMWfuDsJIzE7zoIPTtYOsTv\n8kyFipLCsnKnEu+bnKOBhJnvTz5c07gxx/puRiLhS4zMfNsn/bW1WnBpPZNGwmtP\nktfCa5SVCQwGF9XVsMhVMKSzRcv/BqR5u8kWyIZkUqx+MsFUedSyCULPJv7Z6bAx\nDc1tJpp/90z8UwSQXqk7k/lywbuZ4Huoy/9eDURniADFjjNbcqTIThSHtxGxCt6c\njlmH9rdcuG/Br3ni1Hn2/GyLId4UbBpGLt1NMNDOZvyKfq1qmtAjD4xNYtSKhCxG\nsRr/EC1LSkwc2uQN3ebdNtgUJUQfKA443Mz0vcUzZkzxGqL41sg=\n-----END CERTIFICATE REQUEST-----\n",
+        "location": null, 
+        "objectId": null, 
+        "status": 200
+    }
+}
+```
+```yaml
+- debug: var=generated_csr.csr_details
+```
+```sh
+ok: [localhost] => {
+    "generated_csr.csr_details": {
+        "csr": {
+            "algorithm": "RSA", 
+            "keySize": 2048, 
+            "subjectDto": {
+                "commonName": "server.example.com", 
+                "countryCode": "GB", 
+                "localityName": "Farnborough", 
+                "organizationName": "Example Ltd.", 
+                "organizationUnit": "example", 
+                "stateName": "Hampshire"
+            }
+        }
+    }
+}
+```
+
 ## Example Playbooks and roles
 ### As part of this repo you will find example playbooks and roles:
 

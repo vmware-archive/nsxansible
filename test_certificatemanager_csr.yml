@@ -1,0 +1,21 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Generate CSR
+    nsx_certificatemanager_csr:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      algorithm: "RSA"
+      key_size: 2048
+      common_name: "server.example.com"
+      organization_unit: "example"
+      organization_name: "Example Ltd."
+      locality_name: "Farnborough"
+      state_name: "Hampshire"
+      country_code: "GB"
+    register: generated_csr
+
+  - debug: var=generated_csr
