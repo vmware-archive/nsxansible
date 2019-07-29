@@ -35,12 +35,12 @@ def get_user_role(client_session, user_id):
     :param user_id: The userId. To specify a domain user, use user@domain not domain\user
     """
 
-    try:
-        cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
-    except:
-        cfg_result = False
+    cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
 
-    return cfg_result
+    if cfg_result['status'] == 200:
+        return cfg_result
+
+    return False
 
 def update_user_role(client_session, user_id, role_type):
     """
@@ -108,7 +108,8 @@ def main():
     client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'],
                                module.params['nsxmanager_spec']['host'],
                                module.params['nsxmanager_spec']['user'],
-                               module.params['nsxmanager_spec']['password'])
+                               module.params['nsxmanager_spec']['password'],
+                               fail_mode="continue")
 
     changed = False
 
