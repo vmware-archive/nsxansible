@@ -116,17 +116,13 @@ def main():
     user_role = get_user_role(client_session, module.params['name'])
 
     if user_role:
-        if module.params['state'] == 'present':
+        if module.params['state'] == 'present' or module.params['state'] == 'update':
             if module.params['role_type'] != user_role['body']['accessControlEntry']['role']:
                 changed = update_user_role(client_session, module.params['name'], module.params['role_type'])
-        elif module.params['state'] == 'update':
-            changed = update_user_role(client_session, module.params['name'], module.params['role_type'])        
         elif module.params['state'] == 'absent':
             changed = delete_user_role(client_session, module.params['name'])
     else:
-        if module.params['state'] == 'present':
-            changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
-        elif module.params['state'] == 'update':
+        if module.params['state'] == 'present' or module.params['state'] == 'update':
             changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
 
     module.exit_json(changed=changed)
