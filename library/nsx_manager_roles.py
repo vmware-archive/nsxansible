@@ -37,7 +37,10 @@ def get_user_role(client_session, user_id):
 
     cfg_result = client_session.read('userRoleMgmt', uri_parameters={'userId': user_id})
 
-    return cfg_result
+    if cfg_result['status'] == 200:
+        return cfg_result
+
+    return False
 
 def update_user_role(client_session, user_id, role_type):
     """
@@ -105,16 +108,22 @@ def main():
     client_session = NsxClient(module.params['nsxmanager_spec']['raml_file'],
                                module.params['nsxmanager_spec']['host'],
                                module.params['nsxmanager_spec']['user'],
-                               module.params['nsxmanager_spec']['password'])
+                               module.params['nsxmanager_spec']['password'],
+                               fail_mode="continue")
 
     changed = False
-    
-    if module.params['state'] == 'present':
-        changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
-    elif module.params['state'] == 'update':
-        changed = update_user_role(client_session, module.params['name'], module.params['role_type'])        
-    elif module.params['state'] == 'absent':
-        changed = delete_user_role(client_session, module.params['name'])
+
+    user_role = get_user_role(client_session, module.params['name'])
+
+    if user_role:
+        if module.params['state'] == 'present' or module.params['state'] == 'update':
+            if module.params['role_type'] != user_role['body']['accessControlEntry']['role']:
+                changed = update_user_role(client_session, module.params['name'], module.params['role_type'])
+        elif module.params['state'] == 'absent':
+            changed = delete_user_role(client_session, module.params['name'])
+    else:
+        if module.params['state'] == 'present' or module.params['state'] == 'update':
+            changed = create_user_role(client_session, module.params['name'], module.params['role_type'], module.params['is_group'])
 
     module.exit_json(changed=changed)
     #if changed:
