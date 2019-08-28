@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - answerfile_new_nsxman.yml
+  tasks:
+  - name: Overwrite default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      dns_servers:
+        - '1.1.1.1'
+        - '2.2.2.2'
+      dns_suffixes:
+        - 'example.com'
+        - 'one.example.com'
+    register: create_controller_cluster_dns
+
+  - name: Add server to default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      dns_servers:
+        - '3.3.3.3'
+    register: create_controller_cluster_dns
+
+  - name: Add suffix to default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      dns_suffixes:
+        - 'two.example.com'
+    register: create_controller_cluster_dns
+
+  - name: Remove server from default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      dns_servers:
+        - '1.1.1.1'
+    register: create_controller_cluster_dns
+
+  - name: Remove suffix from default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      dns_suffixes:
+        - 'example.com'
+    register: create_controller_cluster_dns
+
+  - debug: var=create_controller_cluster_dns
