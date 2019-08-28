@@ -362,6 +362,316 @@ ok: [localhost] => {
 }
 ```
 
+### Module `nsx_controller_cluster_dns`
+##### Configure default controller cluster settings for DNS
+
+- dns_servers:
+Optional: List of DNS Server IP Addresses. Defaults to an empty list.
+- dns_suffixes:
+Optional: List of DNS Suffixes (search paths). Defaults to an empty list.
+- state:
+absent, present or update defaults to present
+
+Example:
+
+Replace the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Overwrite default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      dns_servers:
+        - '1.1.1.1'
+        - '2.2.2.2'
+      dns_suffixes:
+        - 'example.com'
+        - 'one.example.com'
+    register: create_controller_cluster_dns
+
+#   - debug: var=create_controller_cluster_dns
+```
+
+Append a dns server to the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Add server to default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      dns_servers:
+        - '3.3.3.3'
+    register: create_controller_cluster_dns
+
+#   - debug: var=create_controller_cluster_dns
+```
+
+Append a dns suffix to the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Add suffix to default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      dns_suffixes:
+        - 'two.example.com'
+    register: create_controller_cluster_dns
+
+#   - debug: var=create_controller_cluster_dns
+```
+
+Remove a dns server from the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Remove server from default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      dns_servers:
+        - '1.1.1.1'
+    register: create_controller_cluster_dns
+
+#   - debug: var=create_controller_cluster_dns
+```
+
+Remove a dns suffix from the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Remove suffix from default cluster DNS configuration
+    nsx_controller_cluster_dns:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      dns_suffixes:
+        - 'example.com'
+    register: create_controller_cluster_dns
+
+#   - debug: var=create_controller_cluster_dns
+```
+
+### Module `nsx_controller_cluster_ntp`
+##### Configure default controller cluster settings for NTP
+
+- ntp_servers:
+Optional: List of NTP Servers, IP address or FQDN. Defaults to an empty list. Note if using FQDN, DNS will need to be configured.
+- state:
+absent, present or update defaults to present
+
+Example:
+
+Replace the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Overwrite default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      ntp_servers:
+        - '1.2.3.4'
+        - 'time1.example.com'
+    register: create_controller_cluster_ntp
+
+#   - debug: var=create_controller_cluster_ntp
+```
+
+Append a NTP server to the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Add server to default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      ntp_servers:
+        - 'time2.example.com'
+    register: create_controller_cluster_ntp
+
+#   - debug: var=create_controller_cluster_ntp
+```
+
+Remove an NTP server from the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+  - name: Remove server from default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      ntp_servers:
+        - '1.2.3.4'
+    register: create_controller_cluster_ntp
+
+#   - debug: var=create_controller_cluster_ntp
+```
+
+### Module `nsx_controller_cluster_syslog`
+##### Configure default controller cluster settings for DNS
+
+- syslog_servers:
+Mandatory: List of dictionaries describing up to two Syslog Servers. Each syslog server contains the folloing arguments:
+  - server:
+    Mandatory: IP or FQDN of the syslog server. Note if using FQDN, DNS will need to be configured.
+  - port:
+    Optional: Port number to use. Defaults to 6514.
+  - level:
+    Optional: Log level to send over syslog. Defaults to INFO. Choices are "INFO", "ERROR", or "WARN".
+  - protocol:
+    Optional: Network protocol to use for syslog. Defaults to TLS. Choices are "TLS", "UDP", "TCP".
+  - certificate:
+    Optional: x509 certificate for TLS secured syslog. This option is mandatory if protocol is set to "TLS".
+- state:
+absent, present or update defaults to present
+
+If more than 2 syslog servers are attempted to be configured the module will fail.
+
+Example:
+
+Replace the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+    - name: Overwrite default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: present
+        syslog_servers:
+          - server: "5.3.4.57"
+            protocol: UDP
+            port: "514"
+          - server: "5.3.4.55"
+            protocol: UDP
+            port: "514"
+      register: create_controller_cluster_syslog
+
+#   - debug: var=create_controller_cluster_syslog
+```
+
+Update a syslog server to the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+    - name: Update a server from default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: update
+        syslog_servers:
+          - server: "5.3.4.55"
+            protocol: UDP
+            port: "443"
+      register: create_controller_cluster_syslog
+
+#   - debug: var=create_controller_cluster_syslog
+```
+
+Remove a syslog server from the current configuration:
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+    - name: Remove a server from default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: absent
+        syslog_servers:
+          - server: "5.3.4.57"
+      register: create_controller_cluster_syslog
+
+#   - debug: var=create_controller_cluster_syslog
+```
+
+Append a syslog server to the current configuration (must not make total exceed 2 syslog servers):
+
+```yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_new_nsxman.yml
+  tasks:
+    - name: Append a new server to the default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: update
+        syslog_servers:
+          - server: "5.3.4.56"
+            protocol: UDP
+            port: "443"
+      register: create_controller_cluster_syslog
+
+#   - debug: var=create_controller_cluster_syslog
+```
+
 ### Module `nsx_controllers`
 ##### Deploy individual controllers, full 3 node clusters as well as 1 node lab deployments including syslog configuration
 

@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - answerfile_new_nsxman.yml
+  tasks:
+  - name: Overwrite default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      ntp_servers:
+        - '1.2.3.4'
+        - 'time1.example.com'
+    register: create_controller_cluster_ntp
+
+  - name: Add server to default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: update
+      ntp_servers:
+        - 'time2.example.com'
+    register: create_controller_cluster_ntp
+
+  - name: Remove server from default cluster NTP configuration
+    nsx_controller_cluster_ntp:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      ntp_servers:
+        - '1.2.3.4'
+    register: create_controller_cluster_ntp
+
+  - debug: var=create_controller_cluster_ntp

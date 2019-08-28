@@ -1,0 +1,51 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - answerfile_new_nsxman.yml
+  tasks:
+    - name: Overwrite default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: present
+        syslog_servers: 
+          - server: "5.3.4.57"
+            protocol: UDP
+            port: "514"
+          - server: "5.3.4.55"
+            protocol: UDP
+            port: "514"
+      register: create_controller_cluster_syslog
+
+    - name: Update a server from default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: update
+        syslog_servers: 
+          - server: "5.3.4.55"
+            protocol: UDP
+            port: "443"
+      register: create_controller_cluster_syslog
+
+    # Append (update) would fail here due to more than 2 syslog servers being defined.
+
+    - name: Remove a server from default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: absent
+        syslog_servers: 
+          - server: "5.3.4.57"
+      register: create_controller_cluster_syslog
+
+    - name: Append a new server to the default cluster Syslog configuration
+      nsx_controller_cluster_syslog:
+        nsxmanager_spec: "{{ nsxmanager_spec }}"
+        state: update
+        syslog_servers: 
+          - server: "5.3.4.56"
+            protocol: UDP
+            port: "443"
+      register: create_controller_cluster_syslog
+
+    - debug: var=create_controller_cluster_syslog
