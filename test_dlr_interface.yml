@@ -1,0 +1,66 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+     - answerfile_TPM_Lab.yml
+  tasks:
+  - name: DLR interface creation
+    nsx_dlr_interface:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: ansibleDLR
+      interface:
+        name: Internal new
+        ip: 172.16.4.1
+        prefix_len: 26
+        logical_switch: new_lswitch_name
+        iftype: internal
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+    register: create_dlr_interface
+    tags: create_dlr_interface
+
+  - debug: var=create_dlr_interface
+    tags: debug
+
+  - name: DLR interface update
+    nsx_dlr_interface:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: ansibleDLR
+      interface:
+        name: Internal new
+        ip: 172.16.4.2
+        prefix_len: 26
+        logical_switch: new_lswitch_name
+        iftype: internal
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+    register: update_dlr_interface
+    tags: update_dlr_interface
+
+  - debug: var=update_dlr_interface
+    tags: debug
+
+  - name: DLR interface deletion
+    nsx_dlr_interface:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: absent
+      name: ansibleDLR
+      interface:
+        name: Internal new
+        ip: 172.16.4.2
+        prefix_len: 26
+        logical_switch: new_lswitch_name
+        iftype: internal
+      remote_access: 'true'
+      username: 'admin'
+      password: 'VMware1!VMware1!'
+    register: delete_dlr_interface
+    tags: delete_dlr_interface
+
+  - debug: var=delete_dlr_interface
+    tags: debug
