@@ -995,6 +995,37 @@ Example:
       bootfile: '{{ bootfile }}'
 ```
 
+### Module `nsx_dlr_interface`
+##### Adds, updates or deletes an interface on a Distributed Logical Router (DLR) in NSX
+
+- name:
+Mandatory: name of the DLR to manage interface for
+- state:
+Optional: whether the interface should be present or absent, defaults to present
+- interface:
+Mandatory: A dict that holds the configuration of the interface to manage. See the interface details section for more information
+- username:
+Optional: The username used for the CLI access to the DLR Control VM
+- password:
+Optional: The password used for the CLI access to the DLR Control VM
+- remote_access:
+Optional: true / false, is SSH access to the DLR Control VM enabled, defaults to false
+
+Example:
+```yml
+  - name: DLR interface creation
+    nsx_dlr_interface:
+      nsxmanager_spec: "{{ nsxmanager_spec }}"
+      state: present
+      name: 'ansibleDLR'
+      interface:
+        name: 'Uplink vnic'
+        ip: '192.168.178.2'
+        prefix_len: 24
+        logical_switch: 'edge_ls'
+        iftype: 'uplink'
+```
+
 ### Module `nsx_dlr`
 ##### Deploys, updates or deletes a Distributed Logical Router (DLR) in NSX
 
